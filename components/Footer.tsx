@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { client } from '@/sanity/lib/client'
 import { siteSettingsQuery } from '@/sanity/lib/queries'
 import type { SiteSettingsData } from '@/sanity/types'
@@ -22,10 +23,16 @@ export default async function Footer() {
         <div className="flex flex-col gap-3 items-center md:items-start">
           <Link
             href="/"
-            className="font-playfair text-brand-alabaster text-xl font-bold hover:text-brand-red transition-colors duration-200"
+            className="hover:opacity-90 transition-opacity duration-200"
             aria-label="Homepage"
           >
-            {ownerName}
+            <Image
+              src="/logo/crossover-strategies-logo-light.png"
+              alt={ownerName}
+              width={900}
+              height={176}
+              className="h-8 w-auto"
+            />
           </Link>
           <p className="font-barlow text-brand-dim-grey text-label max-w-xs text-center md:text-left leading-relaxed">
             {tagline}

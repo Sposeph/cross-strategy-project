@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 const NAV_LINKS = [
@@ -30,10 +31,17 @@ export default function Navbar({ logoText = "[Owner Name]", calendarUrl }: Navba
         {/* Logo */}
         <Link
           href="/"
-          className="font-playfair text-brand-alabaster text-xl font-bold hover:text-brand-red transition-colors duration-200 shrink-0"
+          className="shrink-0 hover:opacity-90 transition-opacity duration-200"
           aria-label="Homepage"
         >
-          {logoText}
+          <Image
+            src="/logo/crossover-strategies-logo-light.png"
+            alt={logoText}
+            width={900}
+            height={176}
+            priority
+            className="h-8 w-auto"
+          />
         </Link>
 
         {/* Desktop links */}
