@@ -100,6 +100,18 @@ export default async function Home() {
   const partnersSection = { ...FALLBACK_PARTNERS_SECTION,        ...(data.partnersSection ?? {}) }
   const contactSection  = { ...FALLBACK_CONTACT_SECTION,         ...(data.contactSection  ?? {}) }
 
+  // Eyebrows are centred small-caps with letter-spacing. In Presentation the invisible
+  // stega characters ride along in that text and shove it off-centre, so strip them.
+  socialProof.credentialsHeadline   = stegaClean(socialProof.credentialsHeadline)
+  socialProof.testimonialsHeadline  = stegaClean(socialProof.testimonialsHeadline)
+  benefitsSection.benefitsEyebrow   = stegaClean(benefitsSection.benefitsEyebrow)
+  featuresSection.featuresEyebrow   = stegaClean(featuresSection.featuresEyebrow)
+  howItWorksSection.howItWorksEyebrow = stegaClean(howItWorksSection.howItWorksEyebrow)
+  cta.eyebrow                       = stegaClean(cta.eyebrow)
+  faqSection.faqEyebrow             = stegaClean(faqSection.faqEyebrow)
+  partnersSection.partnersEyebrow   = stegaClean(partnersSection.partnersEyebrow)
+  contactSection.contactEyebrow     = stegaClean(contactSection.contactEyebrow)
+
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',

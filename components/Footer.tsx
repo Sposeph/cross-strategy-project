@@ -3,17 +3,15 @@ import Image from 'next/image'
 import { client } from '@/sanity/lib/client'
 import { siteSettingsQuery } from '@/sanity/lib/queries'
 import type { SiteSettingsData } from '@/sanity/types'
-
-const FOOTER_LINKS = [
-  { label: 'Track Record', href: '/#track-record' },
-  { label: 'Benefits', href: '/#benefits' },
-  { label: 'How It Works', href: '/#how-it-works' },
-  { label: 'Book a Call', href: '/#contact' },
-]
+import { DEFAULT_BOOK_CALL_LABEL, getNavLinks } from '@/lib/navigation'
 
 export default async function Footer() {
   const settings: SiteSettingsData = (await client.fetch(siteSettingsQuery)) ?? {}
   const ownerName = settings.logoText ?? settings.ownerName ?? '[Owner Name]'
+  const footerLinks = [
+    ...getNavLinks(settings).slice(0, 3),
+    { label: settings.navBookCallLabel || DEFAULT_BOOK_CALL_LABEL, href: '/#contact' },
+  ]
   const tagline = settings.footerTagline ?? 'Retail placement consulting for Amazon & DTC brands.'
 
   return (
@@ -42,7 +40,7 @@ export default async function Footer() {
         {/* Links */}
         <nav aria-label="Footer navigation">
           <ul className="flex flex-col md:flex-row gap-4 md:gap-8 items-center">
-            {FOOTER_LINKS.map((link) => (
+            {footerLinks.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}

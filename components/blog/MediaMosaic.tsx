@@ -19,12 +19,6 @@ export default function MediaMosaic({
 }: Props) {
   if (items.length === 0) return null
 
-  // Fills a dangling last row (like the blog grid) instead of leaving empty cells.
-  const rem2 = items.length % 2
-  const rem4 = items.length % 4
-  const lastColSpanBase = rem2 === 1 ? 'col-span-2' : ''
-  const lastColSpanMd = { 0: '', 1: 'md:col-span-4', 2: 'md:col-span-3', 3: 'md:col-span-2' }[rem4]
-
   return (
     <section className="bg-brand-jet-black py-24 px-6 lg:px-12 border-t border-brand-silver/15" aria-label="Media gallery">
       <div className="max-w-7xl mx-auto">
@@ -38,21 +32,20 @@ export default function MediaMosaic({
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[180px] md:auto-rows-[220px] gap-px bg-brand-dim-grey/20">
-          {items.map((item, i) => {
-            const isLast = i === items.length - 1
-            const spanClass = isLast ? `${lastColSpanBase} ${lastColSpanMd}`.trim() : ''
+        {/* Every tile is the same 16:9 box; a short last row is centred, never stretched. */}
+        <div className="flex flex-wrap justify-center gap-2">
+          {items.map((item) => {
             const youtubeId = item.mediaType === 'youtube' ? getYouTubeId(item.youtubeUrl) : null
             return (
               <div
                 key={item._id}
-                className={`group relative overflow-hidden bg-brand-jet-black ${spanClass}`}
+                className="group relative aspect-video w-[calc((100%-0.5rem)/2)] md:w-[calc((100%-1.5rem)/4)] overflow-hidden bg-brand-jet-black"
               >
                 {youtubeId ? (
                   <YouTubeEmbed videoId={youtubeId} title={item.caption ?? 'YouTube video'} />
                 ) : item.image ? (
                   <Image
-                    src={urlFor(item.image).width(800).height(800).fit('crop').auto('format').url()}
+                    src={urlFor(item.image).width(800).height(450).fit('crop').auto('format').url()}
                     alt={item.image.alt ?? item.caption ?? ''}
                     fill
                     sizes="(max-width: 768px) 50vw, 25vw"
