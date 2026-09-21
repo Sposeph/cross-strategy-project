@@ -66,10 +66,10 @@ export default function Features({ features = FALLBACK_FEATURES, section }: Feat
               </div>
 
               <div className="flex flex-col flex-1 p-8">
-                <h3 className="font-barlow font-bold text-brand-alabaster text-subheadline leading-snug mb-3">
+                <h3 className="font-barlow font-bold text-brand-alabaster text-subheadline leading-snug min-h-[2.75em] mb-3">
                   {f.title}
                 </h3>
-                <p className="font-barlow font-medium text-brand-silver text-label leading-relaxed mt-auto pt-4 border-t border-brand-dim-grey/40">
+                <p className="font-barlow font-medium text-brand-silver text-label leading-relaxed pt-4 border-t border-brand-dim-grey/40">
                   {f.description}
                 </p>
               </div>

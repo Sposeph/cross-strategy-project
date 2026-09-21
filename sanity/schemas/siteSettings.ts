@@ -31,6 +31,42 @@ export const siteSettings = defineType({
       description: 'The URL visitors go to when they click "Book a Call". e.g. your Calendly link.',
     }),
     defineField({
+      name: 'navHomeLabel',
+      title: 'Navbar — Home Button',
+      type: 'string',
+      description: 'Text of the top-bar button that goes to the top of the home page. Also used in the footer. Leave blank to use "Home".',
+    }),
+    defineField({
+      name: 'navBenefitsLabel',
+      title: 'Navbar — Benefits Button',
+      type: 'string',
+      description: 'Text of the top-bar button that goes to the Benefits section of the home page. Also used in the footer. Leave blank to use "Why Partner With Us?".',
+    }),
+    defineField({
+      name: 'navHowItWorksLabel',
+      title: 'Navbar — How It Works Button',
+      type: 'string',
+      description: 'Text of the top-bar button that goes to the How It Works section of the home page. Also used in the footer. Leave blank to use "Getting Started".',
+    }),
+    defineField({
+      name: 'navAboutLabel',
+      title: 'Navbar — About Button',
+      type: 'string',
+      description: 'Text of the top-bar button that goes to the About page. Leave blank to use "About".',
+    }),
+    defineField({
+      name: 'navContentLabel',
+      title: 'Navbar — Content Button',
+      type: 'string',
+      description: 'Text of the top-bar button that goes to the Content (blog) page. Leave blank to use "Content".',
+    }),
+    defineField({
+      name: 'navBookCallLabel',
+      title: 'Navbar — Book a Call Button',
+      type: 'string',
+      description: 'Text of the top-bar button that goes to your booking link. Also used in the footer. Leave blank to use "Book a Call".',
+    }),
+    defineField({
       name: 'contactEmail',
       title: 'Contact Email',
       type: 'string',

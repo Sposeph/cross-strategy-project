@@ -57,74 +57,78 @@ export default function Partners({ partners = FALLBACK_PARTNERS, section }: Part
           )}
         </div>
 
-        {/* Partner cards — auto-fit grid so any number of cards lays out cleanly */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(270px,320px))] justify-center gap-6">
+        {/* Partner cards — one wide card per row */}
+        <div className="flex flex-col gap-8 max-w-4xl mx-auto">
           {partners.map((partner, i) => {
             const stagger = ['stagger-2', 'stagger-3', 'stagger-4', 'stagger-5'][i % 4]
             const logoUrl = partner.logo
-              ? urlFor(partner.logo).width(320).height(120).fit('max').auto('format').url()
+              ? urlFor(partner.logo).width(600).fit('max').auto('format').url()
               : null
 
             return (
               <article
                 key={partner._id}
-                className={`fade-up-item ${stagger} group relative flex flex-col bg-white border-t-4 border-t-brand-red shadow-box transition-all duration-200 hover:-translate-y-1 hover:shadow-[8px_8px_0px_#ef2626]`}
+                className={`fade-up-item ${stagger} group relative flex flex-col md:flex-row bg-white border-t-4 border-t-brand-red shadow-box transition-all duration-200 hover:-translate-y-1 hover:shadow-[8px_8px_0px_#ef2626]`}
               >
-                {/* Tag header strip */}
-                <div className="flex items-center justify-between px-6 pt-5">
-                  <span className="font-barlow font-bold text-[10px] tracking-[0.2em] uppercase text-brand-dim-grey">
-                    Partner
-                  </span>
-                  <span className="w-1.5 h-1.5 bg-brand-red" aria-hidden="true" />
-                </div>
-
-                <div className="flex flex-col items-center text-center px-7 pt-5 flex-1">
-                  {/* Logo window, styled like a shelf-tag label */}
-                  <div className="w-full min-h-16 flex items-center justify-center mb-5 bg-brand-alabaster/50 border border-dashed border-brand-dim-grey/40 px-4 py-4">
+                {/* Logo window, styled like a shelf-tag label. Fixed size: any logo shape scales to fit. */}
+                <div className="flex items-center p-6 md:w-80 shrink-0">
+                  <div className="relative w-full h-32 flex items-center justify-center bg-brand-alabaster/50 border border-dashed border-brand-dim-grey/40 p-4">
                     {logoUrl ? (
-                      <Image
-                        src={logoUrl}
-                        alt={(partner.logo as { alt?: string })?.alt ?? partner.name}
-                        width={160}
-                        height={56}
-                        className="max-h-12 w-auto object-contain"
-                      />
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={logoUrl}
+                          alt={(partner.logo as { alt?: string })?.alt ?? partner.name}
+                          fill
+                          sizes="(min-width: 768px) 240px, 90vw"
+                          className="object-contain"
+                        />
+                      </div>
                     ) : (
-                      <span className="font-playfair text-subheadline text-brand-jet-black leading-snug">
+                      <span className="font-playfair text-subheadline text-brand-jet-black leading-snug text-center">
                         {partner.name}
                       </span>
                     )}
                   </div>
+                </div>
+
+                <div className="flex flex-col flex-1 px-6 pb-6 md:pl-0 md:pr-8 md:py-6">
+                  {/* Tag header strip */}
+                  <div className="flex items-center justify-between">
+                    <span className="font-barlow font-bold text-[10px] tracking-[0.2em] uppercase text-brand-dim-grey">
+                      Partner
+                    </span>
+                    <span className="w-1.5 h-1.5 bg-brand-red" aria-hidden="true" />
+                  </div>
 
                   {logoUrl && (
-                    <h3 className="font-barlow font-bold text-brand-jet-black text-label tracking-wide mb-3">
+                    <h3 className="font-barlow font-bold text-brand-jet-black text-subheadline leading-snug mt-3">
                       {partner.name}
                     </h3>
                   )}
 
-                  <p className="font-barlow text-brand-dim-grey text-label leading-relaxed mb-6">
+                  <p className="font-barlow text-brand-dim-grey text-label leading-relaxed mt-3 mb-6">
                     {partner.blurb}
                   </p>
+
+                  {/* Barcode flourish */}
+                  <div
+                    className="h-3 mt-auto mb-5 opacity-60"
+                    style={{
+                      backgroundImage:
+                        'repeating-linear-gradient(90deg, #1a1a1a 0px, #1a1a1a 2px, transparent 2px, transparent 4px, #1a1a1a 4px, #1a1a1a 5px, transparent 5px, transparent 8px)',
+                    }}
+                    aria-hidden="true"
+                  />
+
+                  <a
+                    href={partner.websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-barlow font-bold text-brand-alabaster bg-brand-jet-black px-6 py-3 text-center group-hover:bg-brand-red transition-colors duration-200 text-label"
+                  >
+                    {partner.buttonLabel || 'Visit Website'} →
+                  </a>
                 </div>
-
-                {/* Barcode flourish */}
-                <div
-                  className="h-3 mx-7 mb-5 opacity-60"
-                  style={{
-                    backgroundImage:
-                      'repeating-linear-gradient(90deg, #1a1a1a 0px, #1a1a1a 2px, transparent 2px, transparent 4px, #1a1a1a 4px, #1a1a1a 5px, transparent 5px, transparent 8px)',
-                  }}
-                  aria-hidden="true"
-                />
-
-                <a
-                  href={partner.websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-barlow font-bold text-brand-alabaster bg-brand-jet-black px-6 py-3 text-center group-hover:bg-brand-red transition-colors duration-200 text-label"
-                >
-                  {partner.buttonLabel || 'Visit Website'} →
-                </a>
               </article>
             )
           })}

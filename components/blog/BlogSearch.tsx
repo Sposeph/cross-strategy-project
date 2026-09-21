@@ -51,7 +51,7 @@ export default function BlogSearch({ posts, categories }: Props) {
   return (
     <>
       {/* ── Search + filter bar ── */}
-      <div className="bg-brand-jet-black border-b border-brand-silver/15 py-6 px-6 lg:px-12 sticky top-16 z-20">
+      <div className="bg-brand-jet-black border-b border-brand-silver/15 py-6 px-6 lg:px-12 md:sticky md:top-16 z-20">
         <div className="max-w-7xl mx-auto flex flex-wrap gap-x-6 gap-y-3 items-center">
           {/* Search input */}
           <div className="relative w-full md:w-72 shrink-0">
@@ -85,11 +85,11 @@ export default function BlogSearch({ posts, categories }: Props) {
             )}
           </div>
 
-          {/* Category pills */}
-          <div className="flex flex-wrap gap-2">
+          {/* Category pills — one scrollable row on mobile so they don't fill the screen */}
+          <div className="flex gap-2 w-full overflow-x-auto pb-1 md:w-auto md:flex-wrap md:overflow-visible md:pb-0">
             <button
               onClick={() => setActiveCategory(null)}
-              className={`font-barlow font-semibold text-xs tracking-widest uppercase px-4 py-2 border transition-colors ${
+              className={`font-barlow font-semibold text-xs tracking-widest uppercase px-4 py-2 border transition-colors shrink-0 whitespace-nowrap ${
                 !activeCategory
                   ? 'bg-brand-red border-brand-red text-white'
                   : 'border-brand-silver/30 text-brand-dim-grey hover:border-brand-alabaster hover:text-brand-alabaster'
@@ -105,7 +105,7 @@ export default function BlogSearch({ posts, categories }: Props) {
                     cat.slug.current === activeCategory ? null : cat.slug.current
                   )
                 }
-                className={`font-barlow font-semibold text-xs tracking-widest uppercase px-4 py-2 border transition-colors ${
+                className={`font-barlow font-semibold text-xs tracking-widest uppercase px-4 py-2 border transition-colors shrink-0 whitespace-nowrap ${
                   activeCategory === cat.slug.current
                     ? 'bg-brand-red border-brand-red text-white'
                     : 'border-brand-silver/30 text-brand-dim-grey hover:border-brand-alabaster hover:text-brand-alabaster'

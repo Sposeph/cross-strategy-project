@@ -172,6 +172,12 @@ export interface SiteSettingsData {
   ownerTitle?: string
   logoText?: string
   calendarUrl?: string
+  navHomeLabel?: string
+  navBenefitsLabel?: string
+  navHowItWorksLabel?: string
+  navAboutLabel?: string
+  navContentLabel?: string
+  navBookCallLabel?: string
   contactEmail?: string
   footerTagline?: string
   blogEyebrow?: string

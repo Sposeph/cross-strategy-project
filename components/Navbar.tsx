@@ -3,21 +3,21 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-
-const NAV_LINKS = [
-  { label: "Track Record", href: "/#track-record" },
-  { label: "Benefits", href: "/#benefits" },
-  { label: "How It Works", href: "/#how-it-works" },
-  { label: "About", href: "/about" },
-  { label: "Content", href: "/blog" },
-];
+import { DEFAULT_BOOK_CALL_LABEL, type NavLink } from "@/lib/navigation";
 
 interface NavbarProps {
   logoText?: string
   calendarUrl?: string
+  links: NavLink[]
+  bookCallLabel?: string
 }
 
-export default function Navbar({ logoText = "[Owner Name]", calendarUrl }: NavbarProps) {
+export default function Navbar({
+  logoText = "[Owner Name]",
+  calendarUrl,
+  links,
+  bookCallLabel = DEFAULT_BOOK_CALL_LABEL,
+}: NavbarProps) {
   const [open, setOpen] = useState(false);
   const bookHref = calendarUrl || "/#contact";
   const bookIsExternal = /^https?:\/\//.test(bookHref);
@@ -45,12 +45,12 @@ export default function Navbar({ logoText = "[Owner Name]", calendarUrl }: Navba
         </Link>
 
         {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
+        <div className="hidden xl:flex items-center gap-8">
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="font-barlow font-semibold text-brand-silver hover:text-brand-alabaster transition-colors duration-200 text-label"
+              className="font-barlow font-semibold text-brand-silver hover:text-brand-alabaster transition-colors duration-200 text-label whitespace-nowrap"
             >
               {link.label}
             </Link>
@@ -58,15 +58,15 @@ export default function Navbar({ logoText = "[Owner Name]", calendarUrl }: Navba
           <Link
             href={bookHref}
             {...(bookIsExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            className="font-barlow font-bold text-brand-alabaster bg-brand-red px-5 py-2 hover:opacity-90 transition-opacity duration-200 text-label"
+            className="font-barlow font-bold text-brand-alabaster bg-brand-red px-5 py-2 hover:opacity-90 transition-opacity duration-200 text-label whitespace-nowrap"
           >
-            Book a Call
+            {bookCallLabel}
           </Link>
         </div>
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden flex flex-col gap-1.5 p-2"
+          className="xl:hidden flex flex-col gap-1.5 p-2"
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
@@ -85,8 +85,8 @@ export default function Navbar({ logoText = "[Owner Name]", calendarUrl }: Navba
 
       {/* Mobile menu */}
       {open && (
-        <div className="md:hidden bg-brand-jet-black border-t border-brand-dim-grey px-6 pb-6 flex flex-col gap-4">
-          {NAV_LINKS.map((link) => (
+        <div className="xl:hidden bg-brand-jet-black border-t border-brand-dim-grey px-6 pb-6 flex flex-col gap-4">
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -102,7 +102,7 @@ export default function Navbar({ logoText = "[Owner Name]", calendarUrl }: Navba
             className="font-barlow font-bold text-brand-alabaster bg-brand-red px-5 py-3 hover:opacity-90 transition-opacity duration-200 text-label text-center"
             onClick={() => setOpen(false)}
           >
-            Book a Call
+            {bookCallLabel}
           </Link>
         </div>
       )}

@@ -13,6 +13,7 @@ import { client } from '@/sanity/lib/client'
 import { siteSettingsQuery } from '@/sanity/lib/queries'
 import type { SiteSettingsData } from '@/sanity/types'
 import { SITE_URL } from '@/lib/site'
+import { getNavLinks } from '@/lib/navigation'
 
 const playfairDisplay = Playfair_Display({
   variable: '--font-playfair',
@@ -168,7 +169,12 @@ export default async function RootLayout({
         <JsonLd schema={websiteSchema} />
         <JsonLd schema={organizationSchema} />
         <JsonLd schema={serviceSchema} />
-        <Navbar logoText={logoText} calendarUrl={settings.calendarUrl} />
+        <Navbar
+          logoText={logoText}
+          calendarUrl={settings.calendarUrl}
+          links={getNavLinks(settings)}
+          bookCallLabel={settings.navBookCallLabel || undefined}
+        />
         <div className="flex-1">
           {children}
         </div>
