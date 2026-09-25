@@ -33,6 +33,12 @@ export default function ContactForm({ section }: ContactFormProps) {
   const subheadline    = section?.contactSubheadline    ?? "Send a message and we'll follow up within one business day."
   const successMsg     = section?.contactSuccessMessage ?? "We'll be in touch within one business day."
 
+  const f = section?.contactForm
+  const optional = f?.optionalLabel ?? '(optional)'
+  const revenueOptions = f?.revenueOptions?.length
+    ? f.revenueOptions
+    : ['$0-$2M', '$2-$5M', '$5-$25M', '$25-$50M', '$50M+']
+
   return (
     <section
       id="contact"
@@ -60,7 +66,7 @@ export default function ContactForm({ section }: ContactFormProps) {
           <div className="fade-up-item stagger-2 bg-[#222222] border border-brand-dim-grey p-10 text-center">
             <div className="w-10 h-0.5 bg-brand-red mx-auto mb-6" aria-hidden="true" />
             <p className="font-playfair text-brand-alabaster text-display-sm">
-              Message received.
+              {f?.successHeading ?? 'Message received.'}
             </p>
             <p className="font-barlow text-brand-silver text-body mt-4 leading-relaxed">
               {successMsg}
@@ -89,7 +95,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                   htmlFor="contact-name"
                   className="font-barlow font-semibold text-brand-silver text-label tracking-wide"
                 >
-                  Name <span className="text-brand-red" aria-hidden="true">*</span>
+                  {f?.nameLabel ?? 'Name'} <span className="text-brand-red" aria-hidden="true">*</span>
                 </label>
                 <input
                   id="contact-name"
@@ -98,7 +104,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                   required
                   autoComplete="name"
                   className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200"
-                  placeholder="Jane Smith"
+                  placeholder={f?.namePlaceholder ?? 'Jane Smith'}
                 />
               </div>
 
@@ -107,7 +113,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                   htmlFor="contact-email"
                   className="font-barlow font-semibold text-brand-silver text-label tracking-wide"
                 >
-                  Email <span className="text-brand-red" aria-hidden="true">*</span>
+                  {f?.emailLabel ?? 'Email'} <span className="text-brand-red" aria-hidden="true">*</span>
                 </label>
                 <input
                   id="contact-email"
@@ -116,7 +122,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                   required
                   autoComplete="email"
                   className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200"
-                  placeholder="jane@yourbrand.com"
+                  placeholder={f?.emailPlaceholder ?? 'jane@yourbrand.com'}
                 />
               </div>
             </div>
@@ -127,8 +133,8 @@ export default function ContactForm({ section }: ContactFormProps) {
                   htmlFor="contact-company"
                   className="font-barlow font-semibold text-brand-silver text-label tracking-wide"
                 >
-                  Brand / Company{' '}
-                  <span className="text-brand-dim-grey font-normal">(optional)</span>
+                  {f?.companyLabel ?? 'Brand / Company'}{' '}
+                  <span className="text-brand-dim-grey font-normal">{optional}</span>
                 </label>
                 <input
                   id="contact-company"
@@ -136,7 +142,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                   type="text"
                   autoComplete="organization"
                   className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200"
-                  placeholder="Your Brand Co."
+                  placeholder={f?.companyPlaceholder ?? 'Your Brand Co.'}
                 />
               </div>
 
@@ -145,8 +151,8 @@ export default function ContactForm({ section }: ContactFormProps) {
                   htmlFor="contact-brand-url"
                   className="font-barlow font-semibold text-brand-silver text-label tracking-wide"
                 >
-                  Brand URL{' '}
-                  <span className="text-brand-dim-grey font-normal">(optional)</span>
+                  {f?.brandUrlLabel ?? 'Brand URL'}{' '}
+                  <span className="text-brand-dim-grey font-normal">{optional}</span>
                 </label>
                 <input
                   id="contact-brand-url"
@@ -154,7 +160,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                   type="url"
                   autoComplete="url"
                   className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200"
-                  placeholder="https://yourbrand.com"
+                  placeholder={f?.brandUrlPlaceholder ?? 'https://yourbrand.com'}
                 />
               </div>
             </div>
@@ -164,7 +170,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                 htmlFor="contact-revenue"
                 className="font-barlow font-semibold text-brand-silver text-label tracking-wide"
               >
-                Annual Company Revenue <span className="text-brand-red" aria-hidden="true">*</span>
+                {f?.revenueLabel ?? 'Annual Company Revenue'} <span className="text-brand-red" aria-hidden="true">*</span>
               </label>
               <select
                 id="contact-revenue"
@@ -173,12 +179,10 @@ export default function ContactForm({ section }: ContactFormProps) {
                 defaultValue=""
                 className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 focus:outline-none focus:border-brand-red transition-colors duration-200"
               >
-                <option value="" disabled>Select range</option>
-                <option value="$0-$2M">$0-$2M</option>
-                <option value="$2-$5M">$2-$5M</option>
-                <option value="$5-$25M">$5-$25M</option>
-                <option value="$25-$50M">$25-$50M</option>
-                <option value="$50M+">$50M+</option>
+                <option value="" disabled>{f?.revenuePlaceholder ?? 'Select range'}</option>
+                {revenueOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
               </select>
             </div>
 
@@ -187,7 +191,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                 htmlFor="contact-message"
                 className="font-barlow font-semibold text-brand-silver text-label tracking-wide"
               >
-                Message <span className="text-brand-red" aria-hidden="true">*</span>
+                {f?.messageLabel ?? 'Message'} <span className="text-brand-red" aria-hidden="true">*</span>
               </label>
               <textarea
                 id="contact-message"
@@ -195,7 +199,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                 required
                 rows={5}
                 className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200 resize-none"
-                placeholder="Tell us about your company and why you are interested in retail"
+                placeholder={f?.messagePlaceholder ?? 'Tell us about your company and why you are interested in retail'}
               />
             </div>
 
@@ -204,7 +208,7 @@ export default function ContactForm({ section }: ContactFormProps) {
               disabled={pending}
               className="w-full md:w-auto font-barlow font-bold text-brand-alabaster bg-brand-red px-8 py-4 hover:opacity-90 transition-opacity duration-200 text-label disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {pending ? 'Sending…' : 'Send Message'}
+              {pending ? (f?.sendingLabel ?? 'Sending…') : (f?.submitLabel ?? 'Send Message')}
             </button>
           </form>
         )}

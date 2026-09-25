@@ -1,5 +1,7 @@
 import type {
   AboutPageData,
+  BlogPageData,
+  BlogListLabels,
   BenefitData,
   BenefitsSection,
   BlogCategoryData,
@@ -313,6 +315,47 @@ export const FALLBACK_ABOUT_PAGE: AboutPageData = {
   standoutQuote:
     "\"The fastest path to retail shelves is through the right relationships. I've spent a decade building them — so your brand doesn't have to start from zero.\"",
 };
+
+export const FALLBACK_BLOG_LABELS: BlogListLabels = {
+  searchPlaceholder: "Search articles…",
+  allLabel: "All",
+  resultsSingular: "{count} article found",
+  resultsPlural: "{count} articles found",
+  noResultsTitle: "No articles found.",
+  noResultsBody: "Try a different search term or browse all categories.",
+  readLabel: "Read →",
+  minReadLabel: "min read",
+};
+
+export const FALLBACK_BLOG_PAGE: Required<Omit<BlogPageData, "seo">> = {
+  ...FALLBACK_BLOG_LABELS,
+  eyebrow: "Retail Insights",
+  headline: "The",
+  headlineAccent: "Content",
+  subheadline:
+    "Tactics, frameworks, and firsthand insights on getting consumer brands into major retail chains — written by someone who has done it 240+ times.",
+  mosaicEyebrow: "Behind The Scenes",
+  mosaicHeadline: "See it in",
+  mosaicHeadlineAccent: "action",
+  keepReadingLabel: "Keep Reading",
+  topicsLabel: "Topics",
+  emptyArticleText: "Article content coming soon.",
+  articleCtaHeadline: "Ready to get on shelves?",
+  articleCtaBody:
+    "Book a free 30-minute strategy call. We’ll audit your brand for retail readiness and map out the right retailer targets for your category.",
+  articleCtaButton: "Book a Strategy Call",
+};
+
+/** Overlay Sanity values on defaults. GROQ returns null for unset fields; those keep the default. */
+export function withFallback<T extends object>(fallback: T, data?: Partial<T> | null): T {
+  const merged = { ...fallback };
+  for (const [key, value] of Object.entries(data ?? {})) {
+    if (value !== null && value !== undefined && value !== "") {
+      (merged as Record<string, unknown>)[key] = value;
+    }
+  }
+  return merged;
+}
 
 export const FALLBACK_BLOG_CATEGORIES: BlogCategoryData[] = [
   {

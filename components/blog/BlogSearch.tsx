@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Fuse from 'fuse.js'
 import BlogGrid from './BlogGrid'
-import type { BlogCategoryData, BlogPostSummary } from '@/sanity/types'
+import type { BlogCategoryData, BlogListLabels, BlogPostSummary } from '@/sanity/types'
 
 const fuseOptions = {
   keys: [
@@ -24,9 +24,10 @@ const fuseOptions = {
 interface Props {
   posts: BlogPostSummary[]
   categories: BlogCategoryData[]
+  labels: BlogListLabels
 }
 
-export default function BlogSearch({ posts, categories }: Props) {
+export default function BlogSearch({ posts, categories, labels }: Props) {
   const [query, setQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
@@ -70,7 +71,7 @@ export default function BlogSearch({ posts, categories }: Props) {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search articles…"
+              placeholder={labels.searchPlaceholder}
               aria-label="Search content articles"
               className="w-full bg-brand-jet-black border border-brand-silver/25 text-brand-alabaster font-barlow text-label pl-11 pr-10 py-2.5 focus:outline-none focus:border-brand-red transition-colors placeholder:text-brand-dim-grey"
             />
@@ -95,7 +96,7 @@ export default function BlogSearch({ posts, categories }: Props) {
                   : 'border-brand-silver/30 text-brand-dim-grey hover:border-brand-alabaster hover:text-brand-alabaster'
               }`}
             >
-              All
+              {labels.allLabel}
             </button>
             {categories.map((cat) => (
               <button
@@ -126,10 +127,13 @@ export default function BlogSearch({ posts, categories }: Props) {
         <div className="max-w-7xl mx-auto">
           {isFiltered && (
             <p className="font-barlow text-brand-dim-grey text-label px-6 lg:px-12 pt-8 pb-4">
-              {filtered.length} article{filtered.length !== 1 ? 's' : ''} found
+              {(filtered.length === 1 ? labels.resultsSingular : labels.resultsPlural).replace(
+                '{count}',
+                String(filtered.length),
+              )}
             </p>
           )}
-          <BlogGrid posts={filtered} />
+          <BlogGrid posts={filtered} labels={labels} />
         </div>
       </section>
     </>

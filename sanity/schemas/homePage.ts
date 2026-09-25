@@ -498,6 +498,20 @@ export const homePage = defineType({
       group: 'faq',
       description: 'The words in the heading that appear in italic. e.g. "know before we talk"',
     }),
+    defineField({
+      name: 'faqSubheadline',
+      title: 'FAQ Section — Text Under Heading',
+      type: 'string',
+      group: 'faq',
+      description: 'Line under the heading. Use {count} for the number of questions. Leave blank to use "{count} questions answered. Don\'t see yours?"',
+    }),
+    defineField({
+      name: 'faqHelpLinkLabel',
+      title: 'FAQ Section — Booking Link Text',
+      type: 'string',
+      group: 'faq',
+      description: 'Link shown after that line. Leave blank to use "Book a call."',
+    }),
 
     defineField({
       name: 'faqs',
@@ -559,6 +573,13 @@ export const homePage = defineType({
       rows: 2,
       group: 'partners',
       description: 'Short line below the heading.',
+    }),
+    defineField({
+      name: 'partnersTagLabel',
+      title: 'Partner Cards — Tag Label',
+      type: 'string',
+      group: 'partners',
+      description: 'Small label in the corner of every partner card. Leave blank to use "Partner".',
     }),
 
     defineField({
@@ -652,6 +673,39 @@ export const homePage = defineType({
       rows: 2,
       group: 'contact',
       description: 'Message shown after the form is submitted successfully. e.g. "Message received. We\'ll be in touch within one business day."',
+    }),
+    defineField({
+      name: 'contactForm',
+      title: 'Form Labels & Buttons',
+      description: 'The words on the form itself. Every field is optional — leave one blank to keep its current wording. These also apply to the form at the bottom of the About page.',
+      type: 'object',
+      group: 'contact',
+      options: { collapsible: true, collapsed: true },
+      fields: [
+        defineField({ name: 'successHeading', title: 'Success Heading', type: 'string', description: 'Big line shown after sending. Default: "Message received."' }),
+        defineField({ name: 'nameLabel', title: 'Name — Label', type: 'string', description: 'Default: "Name"' }),
+        defineField({ name: 'namePlaceholder', title: 'Name — Example Text', type: 'string', description: 'Grey text in the empty box. Default: "Jane Smith"' }),
+        defineField({ name: 'emailLabel', title: 'Email — Label', type: 'string', description: 'Default: "Email"' }),
+        defineField({ name: 'emailPlaceholder', title: 'Email — Example Text', type: 'string', description: 'Default: "jane@yourbrand.com"' }),
+        defineField({ name: 'companyLabel', title: 'Company — Label', type: 'string', description: 'Default: "Brand / Company"' }),
+        defineField({ name: 'companyPlaceholder', title: 'Company — Example Text', type: 'string', description: 'Default: "Your Brand Co."' }),
+        defineField({ name: 'brandUrlLabel', title: 'Brand URL — Label', type: 'string', description: 'Default: "Brand URL"' }),
+        defineField({ name: 'brandUrlPlaceholder', title: 'Brand URL — Example Text', type: 'string', description: 'Default: "https://yourbrand.com"' }),
+        defineField({ name: 'optionalLabel', title: '"Optional" Tag', type: 'string', description: 'Shown next to optional fields. Default: "(optional)"' }),
+        defineField({ name: 'revenueLabel', title: 'Revenue — Label', type: 'string', description: 'Default: "Annual Company Revenue"' }),
+        defineField({ name: 'revenuePlaceholder', title: 'Revenue — Empty Choice', type: 'string', description: 'Shown before a range is picked. Default: "Select range"' }),
+        defineField({
+          name: 'revenueOptions',
+          title: 'Revenue — Choices',
+          type: 'array',
+          of: [defineArrayMember({ type: 'string' })],
+          description: 'The ranges people can pick, in order. Default: $0-$2M, $2-$5M, $5-$25M, $25-$50M, $50M+',
+        }),
+        defineField({ name: 'messageLabel', title: 'Message — Label', type: 'string', description: 'Default: "Message"' }),
+        defineField({ name: 'messagePlaceholder', title: 'Message — Example Text', type: 'string', description: 'Default: "Tell us about your company and why you are interested in retail"' }),
+        defineField({ name: 'submitLabel', title: 'Send Button', type: 'string', description: 'Default: "Send Message"' }),
+        defineField({ name: 'sendingLabel', title: 'Send Button — While Sending', type: 'string', description: 'Default: "Sending…"' }),
+      ],
     }),
 
     // ─── SEO ─────────────────────────────────────────────────────────────────

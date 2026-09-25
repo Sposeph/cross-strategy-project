@@ -45,9 +45,12 @@ export default function FAQ({ faqs = FALLBACK_FAQS, section }: FAQProps) {
           />
           {count > 0 && (
             <p className="fade-up-item stagger-3 font-barlow text-brand-dim-grey text-body mt-6 max-w-xl mx-auto leading-relaxed">
-              {count} question{count !== 1 ? 's' : ''} answered. Don&apos;t see yours?{' '}
+              {(section.faqSubheadline ?? `{count} question${count !== 1 ? 's' : ''} answered. Don't see yours?`).replace(
+                '{count}',
+                String(count),
+              )}{' '}
               <a href="#contact" className="text-brand-red hover:underline">
-                Book a call.
+                {section.faqHelpLinkLabel ?? 'Book a call.'}
               </a>
             </p>
           )}

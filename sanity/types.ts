@@ -50,6 +50,8 @@ export interface FaqSection {
   faqEyebrow?: string
   faqHeadline?: string
   faqHeadlineAccent?: string
+  faqSubheadline?: string
+  faqHelpLinkLabel?: string
 }
 
 export interface PartnersSection {
@@ -57,6 +59,27 @@ export interface PartnersSection {
   partnersHeadline?: string
   partnersHeadlineAccent?: string
   partnersSubheadline?: string
+  partnersTagLabel?: string
+}
+
+export interface ContactFormLabels {
+  successHeading?: string
+  nameLabel?: string
+  namePlaceholder?: string
+  emailLabel?: string
+  emailPlaceholder?: string
+  companyLabel?: string
+  companyPlaceholder?: string
+  brandUrlLabel?: string
+  brandUrlPlaceholder?: string
+  optionalLabel?: string
+  revenueLabel?: string
+  revenuePlaceholder?: string
+  revenueOptions?: string[]
+  messageLabel?: string
+  messagePlaceholder?: string
+  submitLabel?: string
+  sendingLabel?: string
 }
 
 export interface ContactSection {
@@ -65,6 +88,7 @@ export interface ContactSection {
   contactHeadlineAccent?: string
   contactSubheadline?: string
   contactSuccessMessage?: string
+  contactForm?: ContactFormLabels
 }
 
 export interface TestimonialData {
@@ -140,10 +164,15 @@ export interface SeoData {
 export interface AboutPageData {
   ownerName?: string
   ownerTitle?: string
+  bioEyebrow?: string
   bio?: string
   photo?: SanityImage
   statsHighlight?: { value: string; label: string }[]
   standoutQuote?: string
+  standoutQuoteAuthor?: string
+  standoutQuoteAuthorTitle?: string
+  /** Pulled from the Home Page document so both pages share one contact form. */
+  contactSection?: ContactSection
   seo?: SeoData
 }
 
@@ -180,18 +209,38 @@ export interface SiteSettingsData {
   navBookCallLabel?: string
   contactEmail?: string
   footerTagline?: string
-  blogEyebrow?: string
-  blogHeadline?: string
-  blogHeadlineAccent?: string
-  blogSubheadline?: string
-  blogSeoDescription?: string
-  articleCtaHeadline?: string
-  articleCtaBody?: string
-  articleCtaButton?: string
+  footerRightsText?: string
+  footerCreditText?: string
+  socialLinks?: { platform?: string; url: string }[]
+}
+
+/** Words on the article list and cards, passed down to client components. */
+export interface BlogListLabels {
+  searchPlaceholder: string
+  allLabel: string
+  resultsSingular: string
+  resultsPlural: string
+  noResultsTitle: string
+  noResultsBody: string
+  readLabel: string
+  minReadLabel: string
+}
+
+export interface BlogPageData extends Partial<BlogListLabels> {
+  eyebrow?: string
+  headline?: string
+  headlineAccent?: string
+  subheadline?: string
   mosaicEyebrow?: string
   mosaicHeadline?: string
   mosaicHeadlineAccent?: string
-  socialLinks?: { platform?: string; url: string }[]
+  keepReadingLabel?: string
+  topicsLabel?: string
+  emptyArticleText?: string
+  articleCtaHeadline?: string
+  articleCtaBody?: string
+  articleCtaButton?: string
+  seo?: SeoData
 }
 
 export interface BlogTagData {

@@ -95,7 +95,7 @@ export default function Partners({ partners = FALLBACK_PARTNERS, section }: Part
                   {/* Tag header strip */}
                   <div className="flex items-center justify-between">
                     <span className="font-barlow font-bold text-[10px] tracking-[0.2em] uppercase text-brand-dim-grey">
-                      Partner
+                      {section?.partnersTagLabel ?? 'Partner'}
                     </span>
                     <span className="w-1.5 h-1.5 bg-brand-red" aria-hidden="true" />
                   </div>

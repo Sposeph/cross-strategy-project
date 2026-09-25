@@ -19,6 +19,12 @@ export const aboutPage = defineType({
       description: 'e.g. "Retail Placement Consultant"',
     }),
     defineField({
+      name: 'bioEyebrow',
+      title: 'Small Label Above Your Name',
+      type: 'string',
+      description: 'Tiny label above your name at the top of the page. Leave blank to use "About".',
+    }),
+    defineField({
       name: 'bio',
       title: 'Biography',
       type: 'text',
@@ -72,7 +78,19 @@ export const aboutPage = defineType({
       title: 'Featured Quote',
       type: 'text',
       rows: 3,
-      description: 'A memorable quote from you, shown between your bio and the contact form',
+      description: 'The quote shown between your bio and the contact form. Include quotation marks if you want them displayed.',
+    }),
+    defineField({
+      name: 'standoutQuoteAuthor',
+      title: 'Featured Quote — Who Said It',
+      type: 'string',
+      description: 'Name shown under the quote. e.g. "Sarah K." Leave blank to show no name.',
+    }),
+    defineField({
+      name: 'standoutQuoteAuthorTitle',
+      title: 'Featured Quote — Their Role / Company',
+      type: 'string',
+      description: 'Optional line under their name. e.g. "Co-Founder, organic snack brand"',
     }),
     defineField({
       name: 'seo',

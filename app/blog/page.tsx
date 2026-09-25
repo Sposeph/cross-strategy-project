@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import { stegaClean } from 'next-sanity'
 import { sanityFetch } from '@/sanity/lib/live'
 import { client } from '@/sanity/lib/client'
-import { blogListQuery, mosaicQuery, siteSettingsQuery } from '@/sanity/lib/queries'
-import { FALLBACK_BLOG_POSTS, FALLBACK_BLOG_CATEGORIES } from '@/lib/fallbacks'
-import type { BlogCategoryData, BlogPostSummary, MosaicItemData, SiteSettingsData } from '@/sanity/types'
+import { blogListQuery, blogPageQuery, mosaicQuery, siteSettingsQuery } from '@/sanity/lib/queries'
+import { urlFor } from '@/sanity/lib/image'
+import { FALLBACK_BLOG_POSTS, FALLBACK_BLOG_CATEGORIES, FALLBACK_BLOG_PAGE, withFallback } from '@/lib/fallbacks'
+import type { BlogCategoryData, BlogPageData, BlogPostSummary, MosaicItemData, SiteSettingsData } from '@/sanity/types'
 import BlogSearch from '@/components/blog/BlogSearch'
 import MediaMosaic from '@/components/blog/MediaMosaic'
 import JsonLd from '@/components/JsonLd'
@@ -17,32 +18,44 @@ export const revalidate = 3600
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings: SiteSettingsData = stegaClean((await client.fetch(siteSettingsQuery)) ?? {})
+  const page: BlogPageData = stegaClean((await client.fetch<BlogPageData>(blogPageQuery)) ?? {})
   const ownerName = settings.ownerName ?? 'CrossStrat'
+  const seo = page.seo ?? {}
 
   const description =
-    metaDescription(settings.blogSeoDescription) ??
+    metaDescription(seo.description) ??
     'Tactics, frameworks, and firsthand insights on getting Amazon and DTC brands onto retail shelves at Walmart, Target, Whole Foods, and beyond.'
+  const title = seo.title ?? `Retail Insights Content | ${ownerName} — Retail Placement Consultant`
+  const ogImage = seo.ogImage
+    ? {
+        url: urlFor(seo.ogImage).width(1200).height(630).fit('crop').auto('format').url(),
+        width: 1200,
+        height: 630,
+        alt: seo.ogImage.alt ?? title,
+      }
+    : { ...DEFAULT_OG_IMAGE, alt: `Retail Insights — ${ownerName}` }
 
   return {
-    title: `Retail Insights Content | ${ownerName} — Retail Placement Consultant`,
+    title,
     description,
     alternates: {
-      canonical: '/blog',
+      canonical: seo.canonical || '/blog',
       types: { 'application/rss+xml': `${SITE_URL}/blog/feed.xml` },
     },
     openGraph: {
       type: 'website',
       url: `${SITE_URL}/blog`,
-      title: `Retail Insights Content | ${ownerName}`,
+      title,
       description,
-      images: [{ ...DEFAULT_OG_IMAGE, alt: `Retail Insights — ${ownerName}` }],
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Retail Insights Content | ${ownerName}`,
+      title,
       description,
-      images: [DEFAULT_OG_IMAGE.url],
+      images: [ogImage.url],
     },
+    robots: seo.noindex ? { index: false, follow: false } : undefined,
   }
 }
 
@@ -53,6 +66,10 @@ export default async function BlogPage() {
 
   const settings: SiteSettingsData = stegaClean((await client.fetch(siteSettingsQuery)) ?? {})
   const ownerName = settings.ownerName ?? '[Owner Name]'
+  const page = withFallback(
+    FALLBACK_BLOG_PAGE,
+    stegaClean((await client.fetch<BlogPageData>(blogPageQuery)) ?? {}),
+  )
 
   try {
     const { data: rawData } = await sanityFetch({ query: blogListQuery })
@@ -144,28 +161,27 @@ export default async function BlogPage() {
       >
         <AnimateIn className="max-w-7xl mx-auto">
           <p className="font-barlow font-bold text-brand-dim-grey tracking-widest text-xs uppercase mb-4 fade-up-item stagger-1">
-            {settings.blogEyebrow ?? 'Retail Insights'}
+            {page.eyebrow}
           </p>
           <h1 className="font-playfair text-display-lg md:text-display-xl leading-none mb-5 fade-up-item stagger-2">
-            <span className="text-brand-red">{settings.blogHeadline ?? 'The'}</span>
-            <span className="text-brand-alabaster"> {settings.blogHeadlineAccent ?? 'Content'}</span>
+            <span className="text-brand-red">{page.headline}</span>
+            <span className="text-brand-alabaster"> {page.headlineAccent}</span>
           </h1>
           <p className="font-barlow text-brand-silver text-body max-w-2xl leading-relaxed fade-up-item stagger-3">
-            {settings.blogSubheadline ??
-              'Tactics, frameworks, and firsthand insights on getting consumer brands into major retail chains — written by someone who has done it 240+ times.'}
+            {page.subheadline}
           </p>
         </AnimateIn>
       </section>
 
       {/* ── Search + grid ── */}
-      <BlogSearch posts={posts} categories={categories} />
+      <BlogSearch posts={posts} categories={categories} labels={page} />
 
       {/* ── Media mosaic ── */}
       <MediaMosaic
         items={mosaicItems}
-        eyebrow={settings.mosaicEyebrow}
-        headline={settings.mosaicHeadline}
-        headlineAccent={settings.mosaicHeadlineAccent}
+        eyebrow={page.mosaicEyebrow}
+        headline={page.mosaicHeadline}
+        headlineAccent={page.mosaicHeadlineAccent}
       />
     </main>
   )

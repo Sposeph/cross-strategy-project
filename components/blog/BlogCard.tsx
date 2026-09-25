@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { urlFor } from '@/sanity/lib/image'
-import type { BlogPostSummary } from '@/sanity/types'
+import type { BlogListLabels, BlogPostSummary } from '@/sanity/types'
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -19,9 +19,10 @@ interface Props {
   post: BlogPostSummary
   variant?: 'featured-main' | 'featured-secondary' | 'grid'
   index?: number
+  labels: Pick<BlogListLabels, 'readLabel' | 'minReadLabel'>
 }
 
-export default function BlogCard({ post, variant = 'grid', index }: Props) {
+export default function BlogCard({ post, variant = 'grid', index, labels }: Props) {
   const imageUrl = post.coverImage
     ? urlFor(post.coverImage)
         .width(variant === 'featured-main' ? 1200 : 800)
@@ -73,7 +74,7 @@ export default function BlogCard({ post, variant = 'grid', index }: Props) {
           <div className="flex items-center gap-4">
             {post.readingTime && (
               <span className="font-barlow text-brand-silver/60 text-xs tracking-wide">
-                {post.readingTime} min read
+                {post.readingTime} {labels.minReadLabel}
               </span>
             )}
             {post.publishedAt && (
@@ -86,7 +87,7 @@ export default function BlogCard({ post, variant = 'grid', index }: Props) {
               className="ml-auto font-barlow font-semibold text-brand-red text-xs tracking-widest uppercase hover:text-brand-alabaster transition-colors"
               aria-label={`Read article: ${post.title}`}
             >
-              Read →
+              {labels.readLabel}
             </Link>
           </div>
         </div>
@@ -132,7 +133,7 @@ export default function BlogCard({ post, variant = 'grid', index }: Props) {
           <div className="flex items-center gap-3 mt-auto">
             {post.readingTime && (
               <span className="font-barlow text-brand-silver/60 text-xs tracking-wide">
-                {post.readingTime} min read
+                {post.readingTime} {labels.minReadLabel}
               </span>
             )}
             {post.publishedAt && (
@@ -145,7 +146,7 @@ export default function BlogCard({ post, variant = 'grid', index }: Props) {
               className="ml-auto font-barlow font-semibold text-brand-red text-xs tracking-widest uppercase hover:text-brand-alabaster transition-colors"
               aria-label={`Read article: ${post.title}`}
             >
-              Read →
+              {labels.readLabel}
             </Link>
           </div>
         </div>
@@ -196,7 +197,7 @@ export default function BlogCard({ post, variant = 'grid', index }: Props) {
         <div className="flex items-center gap-4 mt-auto pt-4">
           {post.readingTime && (
             <span className="font-barlow text-brand-silver/60 text-xs tracking-wide">
-              {post.readingTime} min read
+              {post.readingTime} {labels.minReadLabel}
             </span>
           )}
           {post.publishedAt && (
@@ -209,7 +210,7 @@ export default function BlogCard({ post, variant = 'grid', index }: Props) {
             className="ml-auto font-barlow font-semibold text-brand-red text-xs tracking-widest uppercase hover:text-brand-alabaster transition-colors"
             aria-label={`Read article: ${post.title}`}
           >
-            Read →
+            {labels.readLabel}
           </Link>
         </div>
       </div>

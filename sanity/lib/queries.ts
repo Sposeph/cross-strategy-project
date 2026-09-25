@@ -89,14 +89,54 @@ export const mosaicQuery = groq`
   }
 `
 
+export const blogPageQuery = groq`
+  *[_type == "blogPage"][0] {
+    eyebrow,
+    headline,
+    headlineAccent,
+    subheadline,
+    searchPlaceholder,
+    allLabel,
+    resultsSingular,
+    resultsPlural,
+    noResultsTitle,
+    noResultsBody,
+    readLabel,
+    minReadLabel,
+    mosaicEyebrow,
+    mosaicHeadline,
+    mosaicHeadlineAccent,
+    keepReadingLabel,
+    topicsLabel,
+    emptyArticleText,
+    articleCtaHeadline,
+    articleCtaBody,
+    articleCtaButton,
+    "seo": {
+      "title": seo.title,
+      "description": seo.description,
+      "ogImage": seo.ogImage { ..., alt },
+      "canonical": seo.canonical,
+      "noindex": coalesce(seo.noindex, false)
+    }
+  }
+`
+
 export const aboutPageQuery = groq`
   *[_type == "aboutPage"][0] {
     ownerName,
     ownerTitle,
+    bioEyebrow,
     bio,
     photo { ..., alt },
     statsHighlight[] { value, label },
     standoutQuote,
+    standoutQuoteAuthor,
+    standoutQuoteAuthorTitle,
+    "contactSection": *[_type == "homePage"][0] {
+      contactEyebrow, contactHeadline, contactHeadlineAccent,
+      contactSubheadline, contactSuccessMessage, contactForm
+    },
     "seo": {
       "title": seo.title,
       "description": coalesce(seo.description, bio),
@@ -123,17 +163,8 @@ export const siteSettingsQuery = groq`
     navBookCallLabel,
     contactEmail,
     footerTagline,
-    blogEyebrow,
-    blogHeadline,
-    blogHeadlineAccent,
-    blogSubheadline,
-    blogSeoDescription,
-    articleCtaHeadline,
-    articleCtaBody,
-    articleCtaButton,
-    mosaicEyebrow,
-    mosaicHeadline,
-    mosaicHeadlineAccent,
+    footerRightsText,
+    footerCreditText,
     socialLinks[] { platform, url }
   }
 `
@@ -221,7 +252,7 @@ export const homePageQuery = groq`
       }
     ),
     "faqSection": *[_type == "homePage"][0] {
-      faqEyebrow, faqHeadline, faqHeadlineAccent
+      faqEyebrow, faqHeadline, faqHeadlineAccent, faqSubheadline, faqHelpLinkLabel
     },
     "faqs": select(
       count(*[_type == "homePage"][0].faqs) > 0 => *[_type == "homePage"][0].faqs[] {
@@ -232,7 +263,7 @@ export const homePageQuery = groq`
       }
     ),
     "partnersSection": *[_type == "homePage"][0] {
-      partnersEyebrow, partnersHeadline, partnersHeadlineAccent, partnersSubheadline
+      partnersEyebrow, partnersHeadline, partnersHeadlineAccent, partnersSubheadline, partnersTagLabel
     },
     "partners": select(
       count(*[_type == "homePage"][0].partners) > 0 => *[_type == "homePage"][0].partners[] {
@@ -244,7 +275,7 @@ export const homePageQuery = groq`
     ),
     "contactSection": *[_type == "homePage"][0] {
       contactEyebrow, contactHeadline, contactHeadlineAccent,
-      contactSubheadline, contactSuccessMessage
+      contactSubheadline, contactSuccessMessage, contactForm
     },
     "seo": *[_type == "homePage"][0] {
       "title": seo.title,

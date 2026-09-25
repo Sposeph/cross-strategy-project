@@ -27,6 +27,16 @@ export const structure: StructureResolver = (S) =>
             .title('About Page')
         ),
 
+      S.listItem()
+        .title('📰  Content Page')
+        .id('blogPage')
+        .child(
+          S.document()
+            .schemaType('blogPage')
+            .documentId('blogPage')
+            .title('Content Page — Header, Search, Article Text')
+        ),
+
       S.divider(),
 
       // ─── GLOBAL SETTINGS ─────────────────────────────────────────────────

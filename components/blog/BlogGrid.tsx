@@ -1,18 +1,19 @@
 import BlogCard from './BlogCard'
-import type { BlogPostSummary } from '@/sanity/types'
+import type { BlogListLabels, BlogPostSummary } from '@/sanity/types'
 
 interface Props {
   posts: BlogPostSummary[]
+  labels: BlogListLabels
 }
 
-export default function BlogGrid({ posts }: Props) {
+export default function BlogGrid({ posts, labels }: Props) {
   if (posts.length === 0) {
     return (
       <div className="py-24 text-center">
         <div className="w-12 h-px bg-brand-dim-grey mx-auto mb-6" aria-hidden="true" />
-        <p className="font-playfair text-brand-dim-grey text-display-sm">No articles found.</p>
+        <p className="font-playfair text-brand-dim-grey text-display-sm">{labels.noResultsTitle}</p>
         <p className="font-barlow text-brand-silver text-label mt-3">
-          Try a different search term or browse all categories.
+          {labels.noResultsBody}
         </p>
       </div>
     )
@@ -28,27 +29,27 @@ export default function BlogGrid({ posts }: Props) {
       {featuredSide.length === 0 ? (
         /* 1 post: full-width */
         <div className="h-[480px] md:h-[560px] relative transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:z-10">
-          <BlogCard post={featuredMain} variant="featured-main" index={1} />
+          <BlogCard post={featuredMain} variant="featured-main" index={1} labels={labels} />
         </div>
       ) : featuredSide.length === 1 ? (
         /* 2 posts: side-by-side, equal height */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-brand-dim-grey/20">
           <div className="h-[420px] relative transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:z-10">
-            <BlogCard post={featuredMain} variant="featured-main" index={1} />
+            <BlogCard post={featuredMain} variant="featured-main" index={1} labels={labels} />
           </div>
           <div className="h-[420px] relative transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:z-10">
-            <BlogCard post={featuredSide[0]} variant="featured-secondary" index={2} />
+            <BlogCard post={featuredSide[0]} variant="featured-secondary" index={2} labels={labels} />
           </div>
         </div>
       ) : (
         /* 3+ posts: tall left, stacked right */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-brand-dim-grey/20">
           <div className="md:row-span-2 h-[480px] md:h-auto relative transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:z-10">
-            <BlogCard post={featuredMain} variant="featured-main" index={1} />
+            <BlogCard post={featuredMain} variant="featured-main" index={1} labels={labels} />
           </div>
           {featuredSide.map((post, i) => (
             <div key={post._id} className="h-[340px] relative transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:z-10">
-              <BlogCard post={post} variant="featured-secondary" index={i + 2} />
+              <BlogCard post={post} variant="featured-secondary" index={i + 2} labels={labels} />
             </div>
           ))}
         </div>
@@ -66,7 +67,7 @@ export default function BlogGrid({ posts }: Props) {
               : ''
             return (
               <div key={post._id} className={`bg-brand-jet-black relative transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:z-10 ${spanClass}`.trim()}>
-                <BlogCard post={post} variant="grid" index={i + 4} />
+                <BlogCard post={post} variant="grid" index={i + 4} labels={labels} />
               </div>
             )
           })}

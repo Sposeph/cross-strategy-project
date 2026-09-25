@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
       case 'aboutPage':
         revalidatePath('/about')
         break
+      case 'blogPage':
+        revalidatePath('/blog')
+        revalidatePath('/blog/[slug]', 'page')
+        break
       case 'siteSettings':
         revalidatePath('/', 'layout')
         break

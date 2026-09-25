@@ -3,7 +3,7 @@ import { structureTool } from 'sanity/structure'
 import { visionTool } from '@sanity/vision'
 import { defineLocations, presentationTool } from 'sanity/presentation'
 import {
-  homePage, siteSettings, seo, aboutPage, blogCategory, blogTag, blogPost, mosaicItem,
+  homePage, siteSettings, seo, aboutPage, blogPage, blogCategory, blogTag, blogPost, mosaicItem,
   hero, cta, testimonial, metric, benefit, feature, howItWorksStep, faq, credential, retailer,
   partner,
 } from './sanity/schemas'
@@ -71,6 +71,10 @@ export default defineConfig({
             select: { title: 'ownerName' },
             resolve: () => ({ locations: [{ title: 'About', href: '/about' }] }),
           }),
+          blogPage: defineLocations({
+            select: { title: 'headlineAccent' },
+            resolve: () => ({ locations: [{ title: 'Content', href: '/blog' }] }),
+          }),
           siteSettings: defineLocations({
             select: { title: 'ownerName' },
             resolve: () => ({ locations: [{ title: 'Site Settings', href: '/' }] }),
@@ -104,7 +108,7 @@ export default defineConfig({
   ],
   schema: {
     types: [
-      homePage, siteSettings, seo, aboutPage, blogCategory, blogTag, blogPost, mosaicItem,
+      homePage, siteSettings, seo, aboutPage, blogPage, blogCategory, blogTag, blogPost, mosaicItem,
       hero, cta, testimonial, metric, benefit, feature, howItWorksStep, faq, credential, retailer,
       partner,
     ],

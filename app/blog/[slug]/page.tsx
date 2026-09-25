@@ -6,9 +6,9 @@ import { stegaClean } from 'next-sanity'
 import { client } from '@/sanity/lib/client'
 import { sanityFetch } from '@/sanity/lib/live'
 import { urlFor } from '@/sanity/lib/image'
-import { blogPostQuery, blogRelatedQuery, blogSitemapQuery, siteSettingsQuery } from '@/sanity/lib/queries'
-import type { BlogPostData, BlogPostSummary, SiteSettingsData } from '@/sanity/types'
-import { FALLBACK_BLOG_POSTS } from '@/lib/fallbacks'
+import { blogPageQuery, blogPostQuery, blogRelatedQuery, blogSitemapQuery, siteSettingsQuery } from '@/sanity/lib/queries'
+import type { BlogPageData, BlogPostData, BlogPostSummary, SiteSettingsData } from '@/sanity/types'
+import { FALLBACK_BLOG_PAGE, FALLBACK_BLOG_POSTS, withFallback } from '@/lib/fallbacks'
 import PortableTextRenderer from '@/components/blog/PortableTextRenderer'
 import BlogCard from '@/components/blog/BlogCard'
 import JsonLd from '@/components/JsonLd'
@@ -87,6 +87,10 @@ export default async function BlogPostPage({ params }: Props) {
 
   const settings: SiteSettingsData = stegaClean((await client.fetch(siteSettingsQuery)) ?? {})
   const ownerName = settings.ownerName ?? '[Owner Name]'
+  const blogPage = withFallback(
+    FALLBACK_BLOG_PAGE,
+    stegaClean((await client.fetch<BlogPageData>(blogPageQuery)) ?? {}),
+  )
 
   let post: BlogPostData | null = await sanityFetch({ query: blogPostQuery, params: { slug } })
     .then(r => r.data as BlogPostData)
@@ -157,11 +161,11 @@ export default async function BlogPostPage({ params }: Props) {
             className="flex items-center gap-2 font-barlow text-brand-dim-grey text-xs tracking-wide mb-10 fade-up-item stagger-1"
           >
             <Link href="/" className="hover:text-brand-alabaster transition-colors">
-              Home
+              {settings.navHomeLabel || 'Home'}
             </Link>
             <span aria-hidden="true">/</span>
             <Link href="/blog" className="hover:text-brand-alabaster transition-colors">
-              Content
+              {settings.navContentLabel || 'Content'}
             </Link>
             <span aria-hidden="true">/</span>
             <span className="text-brand-silver truncate max-w-[200px]">{post.title}</span>
@@ -207,7 +211,7 @@ export default async function BlogPostPage({ params }: Props) {
             {post.readingTime && (
               <>
                 <span aria-hidden="true" className="text-[#444444]">·</span>
-                <span>{post.readingTime} min read</span>
+                <span>{post.readingTime} {blogPage.minReadLabel}</span>
               </>
             )}
           </div>
@@ -238,7 +242,7 @@ export default async function BlogPostPage({ params }: Props) {
             <PortableTextRenderer value={post.body} />
           ) : (
             <p className="font-barlow text-brand-dim-grey text-body text-center py-16">
-              Article content coming soon.
+              {blogPage.emptyArticleText}
             </p>
           )}
 
@@ -246,7 +250,7 @@ export default async function BlogPostPage({ params }: Props) {
           {post.tags && post.tags.length > 0 && (
             <div className="mt-12 pt-8 border-t border-[#333333]">
               <p className="font-barlow font-semibold text-brand-dim-grey text-xs tracking-widest uppercase mb-4">
-                Topics
+                {blogPage.topicsLabel}
               </p>
               <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag) => (
@@ -273,7 +277,7 @@ export default async function BlogPostPage({ params }: Props) {
             <AnimateIn>
               <div className="fade-up-item stagger-1 mb-10">
                 <p className="small-caps font-barlow font-bold text-brand-dim-grey tracking-widest text-label mb-3">
-                  Keep Reading
+                  {blogPage.keepReadingLabel}
                 </p>
                 <div className="w-8 h-0.5 bg-brand-red" aria-hidden="true" />
               </div>
@@ -287,7 +291,7 @@ export default async function BlogPostPage({ params }: Props) {
                 }`}
               >
                 {related.map((rp) => (
-                  <BlogCard key={rp._id} post={rp} />
+                  <BlogCard key={rp._id} post={rp} labels={blogPage} />
                 ))}
               </div>
             </AnimateIn>
@@ -303,11 +307,10 @@ export default async function BlogPostPage({ params }: Props) {
         <AnimateIn className="max-w-4xl mx-auto text-center">
           <div className="w-12 h-0.5 bg-brand-red mx-auto mb-6 fade-up-item stagger-1" aria-hidden="true" />
           <h2 className="font-playfair text-display-sm md:text-display-md text-brand-alabaster leading-tight mb-4 fade-up-item stagger-2">
-            {settings.articleCtaHeadline ?? 'Ready to get on shelves?'}
+            {blogPage.articleCtaHeadline}
           </h2>
           <p className="font-barlow text-brand-silver text-body leading-relaxed max-w-xl mx-auto mb-8 fade-up-item stagger-3">
-            {settings.articleCtaBody ??
-              'Book a free 30-minute strategy call. We’ll audit your brand for retail readiness and map out the right retailer targets for your category.'}
+            {blogPage.articleCtaBody}
           </p>
           <div className="fade-up-item stagger-4">
             <Link
@@ -317,7 +320,7 @@ export default async function BlogPostPage({ params }: Props) {
                 : {})}
               className="inline-block bg-brand-red font-barlow font-bold text-white text-label tracking-widest uppercase px-10 py-4 hover:bg-brand-alabaster hover:text-brand-jet-black transition-colors"
             >
-              {settings.articleCtaButton ?? 'Book a Strategy Call'}
+              {blogPage.articleCtaButton}
             </Link>
           </div>
         </AnimateIn>

@@ -58,10 +58,16 @@ export default async function AboutPage() {
   const about: AboutPageData = {
     ownerName:      data.ownerName      ?? FALLBACK_ABOUT_PAGE.ownerName,
     ownerTitle:     data.ownerTitle     ?? FALLBACK_ABOUT_PAGE.ownerTitle,
+    bioEyebrow:     data.bioEyebrow     ?? 'About',
     bio:            data.bio            ?? FALLBACK_ABOUT_PAGE.bio,
     photo:          data.photo          ?? FALLBACK_ABOUT_PAGE.photo,
     statsHighlight: data.statsHighlight?.length ? data.statsHighlight : FALLBACK_ABOUT_PAGE.statsHighlight,
     standoutQuote:  data.standoutQuote  ?? FALLBACK_ABOUT_PAGE.standoutQuote,
+    standoutQuoteAuthor:      data.standoutQuoteAuthor,
+    standoutQuoteAuthorTitle: data.standoutQuoteAuthorTitle,
+    contactSection: data.contactSection
+      ? { ...data.contactSection, contactEyebrow: stegaClean(data.contactSection.contactEyebrow) }
+      : undefined,
   }
 
   const photoUrl = (about.photo as { asset?: unknown } | undefined)?.asset
@@ -168,7 +174,7 @@ export default async function AboutPage() {
             {/* Bio text */}
             <div className="fade-up-item stagger-2 flex flex-col justify-center">
               <p className="small-caps font-barlow font-bold text-brand-dim-grey tracking-widest text-label mb-3">
-                About
+                {stegaClean(about.bioEyebrow)}
               </p>
               <div className="w-12 h-0.5 bg-brand-red mb-6" aria-hidden="true" />
               <h1 className="font-playfair text-display-sm md:text-display-md text-brand-alabaster leading-tight mb-2">
@@ -215,9 +221,12 @@ export default async function AboutPage() {
               <p className="font-playfair italic text-brand-jet-black text-display-sm md:text-display-md leading-snug">
                 {about.standoutQuote}
               </p>
-              {about.ownerName && (
+              {about.standoutQuoteAuthor && (
                 <footer className="mt-6 font-barlow font-semibold text-brand-dim-grey text-label tracking-wide">
-                  — {about.ownerName}
+                  — {about.standoutQuoteAuthor}
+                  {about.standoutQuoteAuthorTitle && (
+                    <span className="block font-normal mt-1">{about.standoutQuoteAuthorTitle}</span>
+                  )}
                 </footer>
               )}
             </blockquote>
@@ -226,7 +235,7 @@ export default async function AboutPage() {
       )}
 
       {/* ── Contact form ── */}
-      <ContactForm />
+      <ContactForm section={about.contactSection} />
     </main>
   )
 }
