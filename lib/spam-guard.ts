@@ -1,0 +1,230 @@
+import { z } from 'zod'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+export type GuardAction = 'send' | 'review' | 'fake-success' | 'reject'
+
+export const CONTACT_FIELDS = ['name', 'email', 'company', 'brandUrl', 'annualRevenue', 'message'] as const
+export type ContactField = (typeof CONTACT_FIELDS)[number]
+export type ContactValues = Record<ContactField, string>
+export type FieldErrors = Partial<Record<ContactField, string>>
+
+export interface GuardResult {
+  action: GuardAction
+  reasons: string[]
+  error?: string
+  fieldErrors?: FieldErrors
+  data?: ContactValues
+}
+
+// ─── Config ──────────────────────────────────────────────────────────────────
+
+const HONEYPOT_FIELD = 'website_url'
+const MIN_FILL_MS = 3000
+const RATE_LIMIT = 5
+const RATE_WINDOW_MS = 10 * 60 * 1000
+
+const TOO_MANY_REQUESTS = 'Too many requests, please try again shortly or call us.'
+
+const contactSchema = z.object({
+  name: z.string().trim().min(1, 'Please enter your name.').max(100, 'Name must be 100 characters or fewer.'),
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Please enter your email.')
+    .max(254, 'Email must be 254 characters or fewer.')
+    .pipe(z.email('Please enter a valid email address.')),
+  company: z.string().trim().max(200, 'Company must be 200 characters or fewer.'),
+  brandUrl: z.string().trim().max(300, 'Brand URL must be 300 characters or fewer.'),
+  annualRevenue: z.string().trim().min(1, 'Please select your annual revenue.').max(50, 'Please select a valid option.'),
+  message: z.string().trim().min(1, 'Please enter a message.').max(5000, 'Message must be 5,000 characters or fewer.'),
+})
+
+const URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"]+/gi
+const BARE_DOMAIN_RE = /\b[\w-]+\.(?:com|net|org|io|co|info|biz|xyz|ru|top|site|online)\b/i
+const HTML_TAG_RE = /<\/?\s*(?:script|a|iframe|img|div|span|style|link|meta|form|input|object|embed|svg|html|body|br|p)\b[^>]*>/i
+
+const SPAM_PHRASES: [RegExp, string][] = [
+  [/\bseo (?:services?|agency|expert|package)/i, 'SEO services'],
+  [/\bsearch engine optimi[sz]ation\b/i, 'search engine optimization'],
+  [/\bfirst page of google\b/i, 'first page of Google'],
+  [/\bback-?links?\b/i, 'backlinks'],
+  [/\blink[- ]building\b/i, 'link building'],
+  [/\bguest[- ]posts?\b/i, 'guest post'],
+  [/\bcrypto(?:currency)?\b/i, 'crypto'],
+  [/\bbitcoin\b/i, 'bitcoin'],
+  [/\bforex\b/i, 'forex'],
+  [/\bcasino\b/i, 'casino'],
+]
+
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com',
+  'guerrillamail.com',
+  'sharklasers.com',
+  '10minutemail.com',
+  'temp-mail.org',
+  'tempmail.com',
+  'yopmail.com',
+  'trashmail.com',
+  'getnada.com',
+  'dispostable.com',
+  'maildrop.cc',
+  'throwawaymail.com',
+])
+
+// ─── Rate limiting ───────────────────────────────────────────────────────────
+
+const upstashLimiter =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Ratelimit({
+        redis: Redis.fromEnv(),
+        limiter: Ratelimit.slidingWindow(RATE_LIMIT, '10 m'),
+        prefix: 'estimate-form',
+      })
+    : null
+
+// Fallback when Upstash isn't configured. This map lives in one server instance's memory,
+// so on serverless (Vercel) each instance counts separately and the limit is best-effort only.
+const memoryHits = new Map<string, number[]>()
+
+async function isRateLimited(ip: string): Promise<boolean> {
+  if (upstashLimiter) {
+    try {
+      return !(await upstashLimiter.limit(ip)).success
+    } catch (err) {
+      // Don't block real customers because Redis is down.
+      console.error('[spam-guard] Upstash rate limit failed, allowing request', err)
+      return false
+    }
+  }
+
+  const now = Date.now()
+  const recent = (memoryHits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
+  recent.push(now)
+  memoryHits.set(ip, recent)
+
+  if (memoryHits.size > 5000) {
+    for (const [key, times] of memoryHits) {
+      if (now - times[times.length - 1] >= RATE_WINDOW_MS) memoryHits.delete(key)
+    }
+  }
+
+  return recent.length > RATE_LIMIT
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+export function getClientIp(headers: Headers): string {
+  return (
+    headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    headers.get('x-real-ip')?.trim() ||
+    'unknown'
+  )
+}
+
+export function readContactValues(formData: FormData): ContactValues {
+  return Object.fromEntries(
+    CONTACT_FIELDS.map((field) => [field, String(formData.get(field) ?? '')]),
+  ) as ContactValues
+}
+
+// Both timestamps come from the client clock, so the difference is immune to client/server clock skew.
+function checkTiming(formData: FormData): 'too-fast' | 'ok' | 'invalid' {
+  const renderedAt = Number(formData.get('renderedAt'))
+  const submittedAt = Number(formData.get('submittedAt'))
+  if (!(renderedAt > 0) || !(submittedAt > 0) || submittedAt < renderedAt) return 'invalid'
+  return submittedAt - renderedAt < MIN_FILL_MS ? 'too-fast' : 'ok'
+}
+
+function linkRatio(text: string): number {
+  const chars = text.replace(/\s/g, '').length
+  if (!chars) return 0
+  const linkChars = (text.match(URL_RE) ?? []).reduce((sum, url) => sum + url.length, 0)
+  return linkChars / chars
+}
+
+function scoreContent(data: ContactValues): string[] {
+  const reasons: string[] = []
+  const { name, email, message } = data
+
+  const urlCount = (message.match(URL_RE) ?? []).length
+  if (urlCount >= 3) reasons.push(`${urlCount} links in message`)
+
+  const letters = message.match(/\p{L}/gu)?.length ?? 0
+  const latin = message.match(/\p{Script=Latin}/gu)?.length ?? 0
+  const vowels = message.match(/[aeiouy]/gi)?.length ?? 0
+  if (letters >= 20 && latin / letters < 0.5) reasons.push('message is mostly non-Latin text')
+  else if (latin >= 30 && vowels / latin < 0.2) reasons.push('message looks garbled')
+
+  const text = `${name}\n${data.company}\n${message}`
+  for (const [re, label] of SPAM_PHRASES) {
+    if (re.test(text)) reasons.push(`spam phrase: ${label}`)
+  }
+
+  const domain = email.split('@').pop()?.toLowerCase() ?? ''
+  if (DISPOSABLE_DOMAINS.has(domain)) reasons.push(`disposable email domain: ${domain}`)
+
+  if (new RegExp(URL_RE.source, 'i').test(name) || BARE_DOMAIN_RE.test(name)) reasons.push('URL in name field')
+
+  return reasons
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+
+async function runChecks(formData: FormData, ip: string): Promise<GuardResult> {
+  if (await isRateLimited(ip)) {
+    return { action: 'reject', reasons: ['rate limit exceeded'], error: TOO_MANY_REQUESTS }
+  }
+
+  if (String(formData.get(HONEYPOT_FIELD) ?? '').trim()) {
+    return { action: 'fake-success', reasons: ['honeypot filled'] }
+  }
+
+  const reasons: string[] = []
+
+  const timing = checkTiming(formData)
+  if (timing === 'too-fast') {
+    return { action: 'fake-success', reasons: [`submitted in under ${MIN_FILL_MS / 1000}s`] }
+  }
+  if (timing === 'invalid') reasons.push('missing or invalid form timestamp')
+
+  const parsed = contactSchema.safeParse(readContactValues(formData))
+  if (!parsed.success) {
+    const fieldErrors: FieldErrors = {}
+    for (const issue of parsed.error.issues) {
+      const field = issue.path[0] as ContactField
+      fieldErrors[field] ??= issue.message
+    }
+    return { action: 'reject', reasons: [], error: 'Please fix the highlighted fields.', fieldErrors }
+  }
+  const data = parsed.data
+
+  // Hard blocks: visible error, never a silent drop, so a real person can fix and resend.
+  if (Object.values(data).some((value) => HTML_TAG_RE.test(value))) {
+    return {
+      action: 'reject',
+      reasons: ['HTML/script tags in submission'],
+      error: 'Please remove any HTML or code from your message and try again.',
+    }
+  }
+  if (linkRatio(data.message) > 0.8) {
+    return {
+      action: 'reject',
+      reasons: ['message is more than 80% links'],
+      error: 'Please describe your inquiry in a few words. Messages that are only links can’t be sent.',
+      fieldErrors: { message: 'Please add a short description, not just links.' },
+    }
+  }
+
+  reasons.push(...scoreContent(data))
+
+  return { action: reasons.length ? 'review' : 'send', reasons, data }
+}
+
+export async function checkSubmission(formData: FormData, ip: string): Promise<GuardResult> {
+  const result = await runChecks(formData, ip)
+  if (result.reasons.length) {
+    console.warn(`[spam-guard] ${result.action} ip=${ip}: ${result.reasons.join('; ')}`)
+  }
+  return result
+}

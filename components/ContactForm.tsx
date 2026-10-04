@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from 'react'
+import { useActionState, useEffect, useRef } from 'react'
 import { sendContactMessage, type ContactFormState } from '@/app/actions/contact'
 import AnimateIn from './AnimateIn'
 import type { ContactSection } from '@/sanity/types'
@@ -24,8 +24,22 @@ function SplitHeadline({ headline, accent, className }: { headline: string; acce
   )
 }
 
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null
+  return <p id={id} className="font-barlow text-brand-red text-label">{message}</p>
+}
+
 export default function ContactForm({ section }: ContactFormProps) {
   const [state, action, pending] = useActionState(sendContactMessage, INITIAL_STATE)
+  const renderedAtRef = useRef<HTMLInputElement>(null)
+  const submittedAtRef = useRef<HTMLInputElement>(null)
+  const errors = state.fieldErrors ?? {}
+  const values = state.values
+
+  // Set on mount, not during render, so SSR/hydration markup matches.
+  useEffect(() => {
+    if (renderedAtRef.current) renderedAtRef.current.value = String(Date.now())
+  }, [])
 
   const eyebrow        = section?.contactEyebrow        ?? 'Get In Touch'
   const headline       = section?.contactHeadline       ?? 'Ready to get your brand on shelves?'
@@ -73,12 +87,21 @@ export default function ContactForm({ section }: ContactFormProps) {
             </p>
           </div>
         ) : (
-          <form action={action} noValidate className="fade-up-item stagger-2 space-y-5">
-            {/* Honeypot — hidden from users, catches bot submissions */}
-            <div className="hidden" aria-hidden="true">
-              <label htmlFor="contact-website">Website</label>
-              <input id="contact-website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+          <form
+            action={action}
+            onSubmit={() => {
+              if (submittedAtRef.current) submittedAtRef.current.value = String(Date.now())
+            }}
+            noValidate
+            className="fade-up-item stagger-2 space-y-5"
+          >
+            {/* Honeypot — moved off-screen (not display:none, which some bots skip), catches bot submissions */}
+            <div className="absolute -left-[9999px] w-px h-px overflow-hidden" aria-hidden="true">
+              <label htmlFor="contact-website-url">Website</label>
+              <input id="contact-website-url" name="website_url" type="text" tabIndex={-1} autoComplete="off" />
             </div>
+            <input ref={renderedAtRef} type="hidden" name="renderedAt" />
+            <input ref={submittedAtRef} type="hidden" name="submittedAt" />
 
             {state.error && (
               <p
@@ -103,9 +126,13 @@ export default function ContactForm({ section }: ContactFormProps) {
                   type="text"
                   required
                   autoComplete="name"
+                  defaultValue={values?.name}
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? 'contact-name-error' : undefined}
                   className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200"
                   placeholder={f?.namePlaceholder ?? 'Jane Smith'}
                 />
+                <FieldError id="contact-name-error" message={errors.name} />
               </div>
 
               <div className="flex flex-col gap-2">
@@ -121,9 +148,13 @@ export default function ContactForm({ section }: ContactFormProps) {
                   type="email"
                   required
                   autoComplete="email"
+                  defaultValue={values?.email}
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'contact-email-error' : undefined}
                   className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200"
                   placeholder={f?.emailPlaceholder ?? 'jane@yourbrand.com'}
                 />
+                <FieldError id="contact-email-error" message={errors.email} />
               </div>
             </div>
 
@@ -141,9 +172,13 @@ export default function ContactForm({ section }: ContactFormProps) {
                   name="company"
                   type="text"
                   autoComplete="organization"
+                  defaultValue={values?.company}
+                  aria-invalid={!!errors.company}
+                  aria-describedby={errors.company ? 'contact-company-error' : undefined}
                   className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200"
                   placeholder={f?.companyPlaceholder ?? 'Your Brand Co.'}
                 />
+                <FieldError id="contact-company-error" message={errors.company} />
               </div>
 
               <div className="flex flex-col gap-2">
@@ -159,9 +194,13 @@ export default function ContactForm({ section }: ContactFormProps) {
                   name="brandUrl"
                   type="url"
                   autoComplete="url"
+                  defaultValue={values?.brandUrl}
+                  aria-invalid={!!errors.brandUrl}
+                  aria-describedby={errors.brandUrl ? 'contact-brand-url-error' : undefined}
                   className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200"
                   placeholder={f?.brandUrlPlaceholder ?? 'https://yourbrand.com'}
                 />
+                <FieldError id="contact-brand-url-error" message={errors.brandUrl} />
               </div>
             </div>
 
@@ -176,7 +215,11 @@ export default function ContactForm({ section }: ContactFormProps) {
                 id="contact-revenue"
                 name="annualRevenue"
                 required
-                defaultValue=""
+                // key remounts the select so form reset keeps the echoed value (select ignores defaultValue updates)
+                key={values?.annualRevenue ?? ''}
+                defaultValue={values?.annualRevenue ?? ''}
+                aria-invalid={!!errors.annualRevenue}
+                aria-describedby={errors.annualRevenue ? 'contact-revenue-error' : undefined}
                 className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 focus:outline-none focus:border-brand-red transition-colors duration-200"
               >
                 <option value="" disabled>{f?.revenuePlaceholder ?? 'Select range'}</option>
@@ -184,6 +227,7 @@ export default function ContactForm({ section }: ContactFormProps) {
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
+              <FieldError id="contact-revenue-error" message={errors.annualRevenue} />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -198,9 +242,13 @@ export default function ContactForm({ section }: ContactFormProps) {
                 name="message"
                 required
                 rows={5}
+                defaultValue={values?.message}
+                aria-invalid={!!errors.message}
+                aria-describedby={errors.message ? 'contact-message-error' : undefined}
                 className="bg-[#1a1a1a] border border-brand-dim-grey text-brand-alabaster font-barlow text-body px-4 py-3 placeholder:text-brand-dim-grey focus:outline-none focus:border-brand-red transition-colors duration-200 resize-none"
                 placeholder={f?.messagePlaceholder ?? 'Tell us about your company and why you are interested in retail'}
               />
+              <FieldError id="contact-message-error" message={errors.message} />
             </div>
 
             <button

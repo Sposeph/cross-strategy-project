@@ -1,12 +1,17 @@
 "use server"
 
+import { headers } from 'next/headers'
 import { Resend } from 'resend'
 import { client } from '@/sanity/lib/client'
 import { contactEmailQuery } from '@/sanity/lib/queries'
+import { checkSubmission, getClientIp, readContactValues, type ContactValues, type FieldErrors } from '@/lib/spam-guard'
 
 export interface ContactFormState {
   ok: boolean
   error?: string
+  fieldErrors?: FieldErrors
+  // Echoed back so the form can refill itself; React resets uncontrolled fields after every action.
+  values?: ContactValues
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -24,30 +29,23 @@ export async function sendContactMessage(
   _prev: ContactFormState,
   formData: FormData,
 ): Promise<ContactFormState> {
-  const name          = (formData.get('name')          as string)?.trim()
-  const email         = (formData.get('email')         as string)?.trim()
-  const company       = (formData.get('company')       as string)?.trim()
-  const brandUrl      = (formData.get('brandUrl')      as string)?.trim()
-  const annualRevenue = (formData.get('annualRevenue') as string)?.trim()
-  const message       = (formData.get('message')       as string)?.trim()
+  const values = readContactValues(formData)
+  const guard = await checkSubmission(formData, getClientIp(await headers()))
 
-  // Honeypot: real users never see this field, bots fill it in.
-  if ((formData.get('website') as string)?.trim()) {
+  if (guard.action === 'fake-success') {
     return { ok: true }
   }
 
-  if (!name || !email || !annualRevenue || !message) {
-    return { ok: false, error: 'Name, email, annual revenue, and message are required.' }
+  if (guard.action === 'reject' || !guard.data) {
+    return { ok: false, error: guard.error, fieldErrors: guard.fieldErrors, values }
   }
 
-  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRe.test(email)) {
-    return { ok: false, error: 'Please enter a valid email address.' }
-  }
+  const { name, email, company, brandUrl, annualRevenue, message } = guard.data
+  const review = guard.action === 'review'
 
   if (!process.env.RESEND_API_KEY) {
     console.error('[contact form] RESEND_API_KEY is not set')
-    return { ok: false, error: 'Failed to send message. Please try again.' }
+    return { ok: false, error: 'Failed to send message. Please try again.', values }
   }
 
   // Recipient is editable in Sanity (Site Settings → Contact Email); env is the fallback.
@@ -57,7 +55,7 @@ export async function sendContactMessage(
 
   if (!recipient) {
     console.error('[contact form] no recipient: set Site Settings → Contact Email or RESEND_TO_EMAIL')
-    return { ok: false, error: 'Failed to send message. Please try again.' }
+    return { ok: false, error: 'Failed to send message. Please try again.', values }
   }
 
   const { error } = await resend.emails.send({
@@ -65,7 +63,7 @@ export async function sendContactMessage(
     from: process.env.RESEND_FROM_EMAIL || 'CrossStrat <onboarding@resend.dev>',
     to: recipient,
     replyTo: email,
-    subject: `New lead: ${name}`,
+    subject: `${review ? '[Review] ' : ''}New lead: ${name}`,
     html: `
       <p><strong>Name:</strong> ${escapeHtml(name)}</p>
       <p><strong>Email:</strong> ${escapeHtml(email)}</p>
@@ -74,12 +72,17 @@ export async function sendContactMessage(
       <p><strong>Annual Revenue:</strong> ${escapeHtml(annualRevenue)}</p>
       <p><strong>Message:</strong></p>
       <p>${escapeHtml(message).replace(/\n/g, '<br />')}</p>
+      ${review ? `
+      <hr />
+      <p><strong>Flagged for review (delivered anyway):</strong></p>
+      <ul>${guard.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('')}</ul>
+      ` : ''}
     `,
   })
 
   if (error) {
     console.error('[contact form] Resend error', error)
-    return { ok: false, error: 'Failed to send message. Please try again.' }
+    return { ok: false, error: 'Failed to send message. Please try again.', values }
   }
 
   return { ok: true }
