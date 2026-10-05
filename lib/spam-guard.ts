@@ -26,6 +26,17 @@ const RATE_WINDOW_MS = 10 * 60 * 1000
 
 const TOO_MANY_REQUESTS = 'Too many requests, please try again shortly or call us.'
 
+const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+const TURNSTILE_TIMEOUT_MS = 5000
+const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY
+
+// Safety gate: Turnstile is on only when both keys exist. Otherwise the widget isn't rendered
+// (pages pass this to the form) and the server check is skipped, so the form never breaks.
+export const turnstileSiteKey =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && TURNSTILE_SECRET_KEY
+    ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+    : undefined
+
 const contactSchema = z.object({
   name: z.string().trim().min(1, 'Please enter your name.').max(100, 'Name must be 100 characters or fewer.'),
   email: z
@@ -169,6 +180,25 @@ function scoreContent(data: ContactValues): string[] {
   return reasons
 }
 
+async function verifyTurnstile(token: string, ip: string): Promise<'pass' | 'fail' | 'unavailable'> {
+  const body = new URLSearchParams({ secret: TURNSTILE_SECRET_KEY ?? '', response: token })
+  if (ip !== 'unknown') body.set('remoteip', ip)
+
+  try {
+    const res = await fetch(TURNSTILE_VERIFY_URL, {
+      method: 'POST',
+      body,
+      signal: AbortSignal.timeout(TURNSTILE_TIMEOUT_MS),
+    })
+    if (!res.ok) return 'unavailable'
+    const result = (await res.json()) as { success: boolean; 'error-codes'?: string[] }
+    if (result.success) return 'pass'
+    return result['error-codes']?.includes('internal-error') ? 'unavailable' : 'fail'
+  } catch {
+    return 'unavailable'
+  }
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function runChecks(formData: FormData, ip: string): Promise<GuardResult> {
@@ -213,6 +243,24 @@ async function runChecks(formData: FormData, ip: string): Promise<GuardResult> {
       reasons: ['message is more than 80% links'],
       error: 'Please describe your inquiry in a few words. Messages that are only links can’t be sent.',
       fieldErrors: { message: 'Please add a short description, not just links.' },
+    }
+  }
+
+  if (turnstileSiteKey) {
+    const token = String(formData.get('cf-turnstile-response') ?? '')
+    if (!token) {
+      // Widget blocked (ad blocker, network) or JS off: deliver for review rather than lock out a real person.
+      reasons.push('no Turnstile token (widget blocked or not loaded)')
+    } else {
+      const verdict = await verifyTurnstile(token, ip)
+      if (verdict === 'fail') {
+        return {
+          action: 'reject',
+          reasons: ['Turnstile verification failed'],
+          error: 'Security check failed. Please try again.',
+        }
+      }
+      if (verdict === 'unavailable') reasons.push('Turnstile verification unavailable (error or timeout)')
     }
   }
 

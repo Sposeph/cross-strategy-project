@@ -1,14 +1,30 @@
 "use client"
 
 import { useActionState, useEffect, useRef } from 'react'
+import Script from 'next/script'
 import { sendContactMessage, type ContactFormState } from '@/app/actions/contact'
 import AnimateIn from './AnimateIn'
 import type { ContactSection } from '@/sanity/types'
 
 const INITIAL_STATE: ContactFormState = { ok: false }
+const TURNSTILE_MIN_FLEXIBLE_WIDTH = 300 // Cloudflare's minimum width for size: 'flexible'
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        el: HTMLElement,
+        options: { sitekey: string; theme?: 'light' | 'dark' | 'auto'; size?: 'normal' | 'flexible' | 'compact' },
+      ) => string | undefined
+      reset: (widgetId: string) => void
+    }
+  }
+}
 
 interface ContactFormProps {
   section?: ContactSection
+  // Only set when both Turnstile keys exist (see lib/spam-guard.ts); undefined = no widget.
+  turnstileSiteKey?: string
 }
 
 function SplitHeadline({ headline, accent, className }: { headline: string; accent?: string; className: string }) {
@@ -29,10 +45,12 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   return <p id={id} className="font-barlow text-brand-red text-label">{message}</p>
 }
 
-export default function ContactForm({ section }: ContactFormProps) {
+export default function ContactForm({ section, turnstileSiteKey }: ContactFormProps) {
   const [state, action, pending] = useActionState(sendContactMessage, INITIAL_STATE)
   const renderedAtRef = useRef<HTMLInputElement>(null)
   const submittedAtRef = useRef<HTMLInputElement>(null)
+  const turnstileRef = useRef<HTMLDivElement>(null)
+  const turnstileIdRef = useRef<string | undefined>(undefined)
   const errors = state.fieldErrors ?? {}
   const values = state.values
 
@@ -40,6 +58,22 @@ export default function ContactForm({ section }: ContactFormProps) {
   useEffect(() => {
     if (renderedAtRef.current) renderedAtRef.current.value = String(Date.now())
   }, [])
+
+  // Turnstile tokens are single-use: get a fresh one after every server response that keeps the form open.
+  useEffect(() => {
+    if (state === INITIAL_STATE || state.ok || !turnstileIdRef.current) return
+    window.turnstile?.reset(turnstileIdRef.current)
+  }, [state])
+
+  function renderTurnstile() {
+    const el = turnstileRef.current
+    if (!turnstileSiteKey || !el || !window.turnstile || turnstileIdRef.current) return
+    turnstileIdRef.current = window.turnstile.render(el, {
+      sitekey: turnstileSiteKey,
+      theme: 'dark',
+      size: el.offsetWidth >= TURNSTILE_MIN_FLEXIBLE_WIDTH ? 'flexible' : 'compact',
+    })
+  }
 
   const eyebrow        = section?.contactEyebrow        ?? 'Get In Touch'
   const headline       = section?.contactHeadline       ?? 'Ready to get your brand on shelves?'
@@ -250,6 +284,18 @@ export default function ContactForm({ section }: ContactFormProps) {
               />
               <FieldError id="contact-message-error" message={errors.message} />
             </div>
+
+            {turnstileSiteKey && (
+              <>
+                <Script
+                  src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+                  strategy="afterInteractive"
+                  onReady={renderTurnstile}
+                />
+                {/* Turnstile injects a hidden cf-turnstile-response input here */}
+                <div ref={turnstileRef} />
+              </>
+            )}
 
             <button
               type="submit"

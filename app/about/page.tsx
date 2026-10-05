@@ -8,6 +8,7 @@ import { aboutPageQuery } from '@/sanity/lib/queries'
 import type { AboutPageData } from '@/sanity/types'
 import { FALLBACK_ABOUT_PAGE } from '@/lib/fallbacks'
 import ContactForm from '@/components/ContactForm'
+import { turnstileSiteKey } from '@/lib/spam-guard'
 import JsonLd from '@/components/JsonLd'
 import AnimateIn from '@/components/AnimateIn'
 import { SITE_URL, DEFAULT_OG_IMAGE, metaDescription } from '@/lib/site'
@@ -235,7 +236,7 @@ export default async function AboutPage() {
       )}
 
       {/* ── Contact form ── */}
-      <ContactForm section={about.contactSection} />
+      <ContactForm section={about.contactSection} turnstileSiteKey={turnstileSiteKey} />
     </main>
   )
 }

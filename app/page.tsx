@@ -16,6 +16,7 @@ import CallToAction from '@/components/CallToAction'
 import FAQ from '@/components/FAQ'
 import Partners from '@/components/Partners'
 import ContactForm from '@/components/ContactForm'
+import { turnstileSiteKey } from '@/lib/spam-guard'
 import JsonLd from '@/components/JsonLd'
 import SectionDivider from '@/components/SectionDivider'
 import {
@@ -191,7 +192,7 @@ export default async function Home() {
       <SectionDivider from="light" to="dark" />
       <Partners partners={partners} section={partnersSection} />
       <SectionDivider from="dark" to="dark" />
-      <ContactForm section={contactSection} />
+      <ContactForm section={contactSection} turnstileSiteKey={turnstileSiteKey} />
     </main>
   )
 }
