@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const description =
     metaDescription(seo.description) ??
     'Tactics, frameworks, and firsthand insights on getting Amazon and DTC brands onto retail shelves at Walmart, Target, Whole Foods, and beyond.'
-  const title = seo.title ?? `Retail Insights Content | ${ownerName} — Retail Placement Consultant`
+  const title = seo.title ?? 'Retail Insights Content | Retail Placement Consultant'
   const ogImage = seo.ogImage
     ? {
         url: urlFor(seo.ogImage).width(1200).height(630).fit('crop').auto('format').url(),
@@ -127,6 +127,7 @@ export default async function BlogPage() {
             name: item.caption ?? `${ownerName} retail placement video`,
             description: item.caption ?? 'Behind-the-scenes retail placement video.',
             thumbnailUrl: getYouTubeThumbnail(id),
+            uploadDate: item.uploadDate,
             embedUrl: `https://www.youtube.com/embed/${id}`,
             url: item.youtubeUrl,
           },

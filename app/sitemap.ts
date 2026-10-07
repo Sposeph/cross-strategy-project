@@ -27,6 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           description: item.caption ?? 'Behind-the-scenes retail placement video from CrossStrat.',
           thumbnail_loc: getYouTubeThumbnail(id),
           player_loc: `https://www.youtube.com/embed/${id}`,
+          publication_date: item.uploadDate,
         }
       })
       .filter((v): v is NonNullable<typeof v> => v !== null)

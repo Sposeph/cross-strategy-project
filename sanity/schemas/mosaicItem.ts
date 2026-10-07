@@ -58,6 +58,13 @@ export const mosaicItem = defineType({
         }),
     }),
     defineField({
+      name: 'uploadDate',
+      title: 'YouTube Upload Date',
+      type: 'datetime',
+      description: 'When the video was published on YouTube (shown under the video on youtube.com). Google requires this to index the video. If left empty, the date this item was created is used.',
+      hidden: ({ parent }) => parent?.mediaType !== 'youtube',
+    }),
+    defineField({
       name: 'caption',
       title: 'Caption',
       type: 'string',

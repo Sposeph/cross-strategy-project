@@ -283,4 +283,5 @@ export interface MosaicItemData {
   caption?: string
   image?: SanityImage
   youtubeUrl?: string
+  uploadDate: string
 }

@@ -85,7 +85,8 @@ export const mosaicQuery = groq`
     mediaType,
     caption,
     image { ..., alt },
-    youtubeUrl
+    youtubeUrl,
+    "uploadDate": coalesce(uploadDate, _createdAt)
   }
 `
 
