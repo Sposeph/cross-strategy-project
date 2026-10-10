@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import { DROP_SCORE, REVIEW_SCORE, scoreContent, totalScore, URL_RE, type Signal } from './spam-rules'
 
 export type GuardAction = 'send' | 'review' | 'fake-success' | 'reject'
 
@@ -12,6 +13,7 @@ export type FieldErrors = Partial<Record<ContactField, string>>
 export interface GuardResult {
   action: GuardAction
   reasons: string[]
+  score?: number
   error?: string
   fieldErrors?: FieldErrors
   data?: ContactValues
@@ -51,37 +53,7 @@ const contactSchema = z.object({
   message: z.string().trim().min(1, 'Please enter a message.').max(5000, 'Message must be 5,000 characters or fewer.'),
 })
 
-const URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"]+/gi
-const BARE_DOMAIN_RE = /\b[\w-]+\.(?:com|net|org|io|co|info|biz|xyz|ru|top|site|online)\b/i
 const HTML_TAG_RE = /<\/?\s*(?:script|a|iframe|img|div|span|style|link|meta|form|input|object|embed|svg|html|body|br|p)\b[^>]*>/i
-
-const SPAM_PHRASES: [RegExp, string][] = [
-  [/\bseo (?:services?|agency|expert|package)/i, 'SEO services'],
-  [/\bsearch engine optimi[sz]ation\b/i, 'search engine optimization'],
-  [/\bfirst page of google\b/i, 'first page of Google'],
-  [/\bback-?links?\b/i, 'backlinks'],
-  [/\blink[- ]building\b/i, 'link building'],
-  [/\bguest[- ]posts?\b/i, 'guest post'],
-  [/\bcrypto(?:currency)?\b/i, 'crypto'],
-  [/\bbitcoin\b/i, 'bitcoin'],
-  [/\bforex\b/i, 'forex'],
-  [/\bcasino\b/i, 'casino'],
-]
-
-const DISPOSABLE_DOMAINS = new Set([
-  'mailinator.com',
-  'guerrillamail.com',
-  'sharklasers.com',
-  '10minutemail.com',
-  'temp-mail.org',
-  'tempmail.com',
-  'yopmail.com',
-  'trashmail.com',
-  'getnada.com',
-  'dispostable.com',
-  'maildrop.cc',
-  'throwawaymail.com',
-])
 
 // ─── Rate limiting ───────────────────────────────────────────────────────────
 
@@ -154,32 +126,6 @@ function linkRatio(text: string): number {
   return linkChars / chars
 }
 
-function scoreContent(data: ContactValues): string[] {
-  const reasons: string[] = []
-  const { name, email, message } = data
-
-  const urlCount = (message.match(URL_RE) ?? []).length
-  if (urlCount >= 3) reasons.push(`${urlCount} links in message`)
-
-  const letters = message.match(/\p{L}/gu)?.length ?? 0
-  const latin = message.match(/\p{Script=Latin}/gu)?.length ?? 0
-  const vowels = message.match(/[aeiouy]/gi)?.length ?? 0
-  if (letters >= 20 && latin / letters < 0.5) reasons.push('message is mostly non-Latin text')
-  else if (latin >= 30 && vowels / latin < 0.2) reasons.push('message looks garbled')
-
-  const text = `${name}\n${data.company}\n${message}`
-  for (const [re, label] of SPAM_PHRASES) {
-    if (re.test(text)) reasons.push(`spam phrase: ${label}`)
-  }
-
-  const domain = email.split('@').pop()?.toLowerCase() ?? ''
-  if (DISPOSABLE_DOMAINS.has(domain)) reasons.push(`disposable email domain: ${domain}`)
-
-  if (new RegExp(URL_RE.source, 'i').test(name) || BARE_DOMAIN_RE.test(name)) reasons.push('URL in name field')
-
-  return reasons
-}
-
 async function verifyTurnstile(token: string, ip: string): Promise<'pass' | 'fail' | 'unavailable'> {
   const body = new URLSearchParams({ secret: TURNSTILE_SECRET_KEY ?? '', response: token })
   if (ip !== 'unknown') body.set('remoteip', ip)
@@ -210,13 +156,14 @@ async function runChecks(formData: FormData, ip: string): Promise<GuardResult> {
     return { action: 'fake-success', reasons: ['honeypot filled'] }
   }
 
-  const reasons: string[] = []
+  // Soft signals: each adds weight; the total decides send / review / drop (thresholds in spam-rules.ts).
+  const signals: Signal[] = []
 
   const timing = checkTiming(formData)
   if (timing === 'too-fast') {
     return { action: 'fake-success', reasons: [`submitted in under ${MIN_FILL_MS / 1000}s`] }
   }
-  if (timing === 'invalid') reasons.push('missing or invalid form timestamp')
+  if (timing === 'invalid') signals.push({ reason: 'missing or invalid form timestamp', weight: 2 })
 
   const parsed = contactSchema.safeParse(readContactValues(formData))
   if (!parsed.success) {
@@ -250,7 +197,7 @@ async function runChecks(formData: FormData, ip: string): Promise<GuardResult> {
     const token = String(formData.get('cf-turnstile-response') ?? '')
     if (!token) {
       // Widget blocked (ad blocker, network) or JS off: deliver for review rather than lock out a real person.
-      reasons.push('no Turnstile token (widget blocked or not loaded)')
+      signals.push({ reason: 'no Turnstile token (widget blocked or not loaded)', weight: 2 })
     } else {
       const verdict = await verifyTurnstile(token, ip)
       if (verdict === 'fail') {
@@ -260,19 +207,27 @@ async function runChecks(formData: FormData, ip: string): Promise<GuardResult> {
           error: 'Security check failed. Please try again.',
         }
       }
-      if (verdict === 'unavailable') reasons.push('Turnstile verification unavailable (error or timeout)')
+      if (verdict === 'unavailable') {
+        signals.push({ reason: 'Turnstile verification unavailable (error or timeout)', weight: 2 })
+      }
     }
   }
 
-  reasons.push(...scoreContent(data))
+  signals.push(...scoreContent(data))
 
-  return { action: reasons.length ? 'review' : 'send', reasons, data }
+  const score = totalScore(signals)
+  const reasons = signals.map((signal) => `${signal.reason} (+${signal.weight})`)
+  const action = score >= DROP_SCORE ? 'fake-success' : score >= REVIEW_SCORE ? 'review' : 'send'
+  return { action, reasons, score, data }
 }
 
 export async function checkSubmission(formData: FormData, ip: string): Promise<GuardResult> {
   const result = await runChecks(formData, ip)
   if (result.reasons.length) {
-    console.warn(`[spam-guard] ${result.action} ip=${ip}: ${result.reasons.join('; ')}`)
+    const score = result.score === undefined ? '' : ` score=${result.score}`
+    // Dropped by score: log the sender so a false positive can still be found and followed up.
+    const from = result.action === 'fake-success' && result.data ? ` from="${result.data.name}" <${result.data.email}>` : ''
+    console.warn(`[spam-guard] ${result.action}${score} ip=${ip}${from}: ${result.reasons.join('; ')}`)
   }
   return result
 }

@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import { client } from '@/sanity/lib/client'
 import { contactEmailQuery } from '@/sanity/lib/queries'
 import { checkSubmission, getClientIp, readContactValues, type ContactValues, type FieldErrors } from '@/lib/spam-guard'
+import { DROP_SCORE } from '@/lib/spam-rules'
 
 export interface ContactFormState {
   ok: boolean
@@ -74,7 +75,7 @@ export async function sendContactMessage(
       <p>${escapeHtml(message).replace(/\n/g, '<br />')}</p>
       ${review ? `
       <hr />
-      <p><strong>Flagged for review (delivered anyway):</strong></p>
+      <p><strong>Flagged for review (spam score ${guard.score} of ${DROP_SCORE} to block, delivered anyway):</strong></p>
       <ul>${guard.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('')}</ul>
       ` : ''}
     `,
